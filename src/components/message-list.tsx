@@ -3,7 +3,7 @@ import { memberById } from "@/lib/data";
 import type { CaseRoom, Message } from "@/lib/types";
 import { DemoButton } from "./demo-button";
 import { ActionButton, ActionForm, SubmitButton, inputClass, labelClass } from "./forms";
-import { Avatar, Badge } from "./ui";
+import { Avatar, Badge, PersonLink } from "./ui";
 
 export function MessageItem({ room, msg, compact }: { room: CaseRoom; msg: Message; compact?: boolean }) {
   const author = memberById(room, msg.authorId);
@@ -16,17 +16,16 @@ export function MessageItem({ room, msg, compact }: { room: CaseRoom; msg: Messa
   return (
     <article className="flex gap-3">
       <Avatar person={author} ai={msg.isAi} size={compact ? 32 : 36} />
-      <div className={`flex min-w-0 flex-1 flex-col gap-1.5 ${msg.isAi ? "rounded-xl bg-soft px-3.5 py-3" : ""}`}>
+      <div className={`flex min-w-0 flex-1 flex-col gap-1.5 ${msg.isAi ? "rounded-xl border border-line bg-paper px-3.5 py-3" : ""}`}>
         <div className="flex flex-wrap items-center gap-1.5 text-xs sm:text-[13px]">
-          <strong>{msg.isAi ? "AI helper" : (author?.name ?? "Former member")}</strong>
-          <span className="text-subtle">
-            {isOwner ? "· owner " : ""}· {msg.createdAt}
-          </span>
+          <strong>{msg.isAi ? "AI helper" : author ? <PersonLink person={author} /> : "Former member"}</strong>
+          {isOwner && <span className="text-subtle">task owner</span>}
+          <span className="text-subtle">{msg.createdAt}</span>
           {msg.kind === "stuck" && <Badge tone="bad">Stuck</Badge>}
           {wantsToJoin && <Badge tone="warn">Wants to help</Badge>}
           {msg.pinned && <Badge tone="brand">Pinned</Badge>}
         </div>
-        <p className="whitespace-pre-line break-words text-sm leading-relaxed">{msg.body}</p>
+        <p className="whitespace-pre-line break-words text-[14px] leading-relaxed text-ink-2">{msg.body}</p>
         {msg.sources && msg.sources.length > 0 && (
           <div className="flex flex-wrap gap-3 text-xs">
             {msg.sources.map((s, i) => (
@@ -85,7 +84,7 @@ export function Composer({
   const id = taskId ? `msg-${taskId}` : "casemsg";
   if (!room.viewer) {
     return (
-      <div className="flex flex-col gap-2 border-t border-[#ebeef3] pt-3">
+      <div className="flex flex-col gap-2 border-t border-line pt-3">
         <label htmlFor={id} className={labelClass}>
           {label}
         </label>
@@ -100,7 +99,7 @@ export function Composer({
     );
   }
   return (
-    <ActionForm action={postMessage.bind(null, room.id, taskId)} className="flex flex-col gap-2 border-t border-[#ebeef3] pt-3">
+    <ActionForm action={postMessage.bind(null, room.id, taskId)} className="flex flex-col gap-2 border-t border-line pt-3">
       <label htmlFor={id} className={labelClass}>
         {label}
       </label>

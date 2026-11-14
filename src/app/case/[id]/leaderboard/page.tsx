@@ -42,9 +42,9 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
     <div className="mx-auto flex max-w-[1136px] flex-col gap-5">
       <div className="flex flex-col gap-1.5">
         <nav aria-label="Breadcrumb" className="text-[13px] text-subtle">
-          <Link href={`/case/${room.id}`}>Case room</Link> / Leaderboard
+          <Link href={`/case/${room.id}`}>The brief</Link> / Leaderboard
         </nav>
-        <h1 className="font-display text-[28px] font-bold">Contributions leaderboard</h1>
+        <h1 className="font-display text-[38px] leading-tight font-medium tracking-[-0.01em]">Contributions leaderboard</h1>
         <p className="text-sm text-subtle">
           Points only for checked work: 3 for each piece of your work that passes a check, 2 for each check you do for
           someone else.
@@ -54,17 +54,17 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="rounded-[14px] border border-line bg-white p-4">
-            <div className="text-[26px] font-bold">{s.value}</div>
+            <div className="font-display text-[34px] leading-none font-medium">{s.value}</div>
             <div className="text-[13px] text-subtle">{s.label}</div>
           </div>
         ))}
         <div className="rounded-[14px] bg-ink p-4 text-white">
-          <div className="text-[26px] font-bold">{briefProgress(room)}%</div>
+          <div className="font-display text-[34px] leading-none font-medium">{briefProgress(room)}%</div>
           <div className="text-[13px] text-line-2">Of the brief filled by the team</div>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-line bg-white px-4 py-2 sm:px-6">
+      <div className="overflow-x-auto panel px-4 py-2 sm:px-6">
         <table className="w-full min-w-[640px] border-collapse text-sm">
           <caption className="sr-only">People ranked by points</caption>
           <thead>
@@ -86,7 +86,7 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
               const isYou = r.id === room.viewer?.id;
               return (
                 <tr key={r.id} className={`border-t border-[#ebeef3] ${top ? "bg-[#fff9ee]" : ""}`}>
-                  <td className={`px-2 py-3.5 font-bold ${top ? "text-warn" : ""}`}>{i + 1}</td>
+                  <td className={`px-2 py-3.5 font-semibold ${top ? "text-warn" : ""}`}>{i + 1}</td>
                   <td className="px-2 py-3.5 font-semibold">
                     {r.name}
                     {isYou && <span className="font-normal text-subtle"> (you)</span>}
@@ -94,9 +94,9 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
                   <td className="px-2 py-3.5 text-muted">{r.headline || memberById(room, r.id)?.headline}</td>
                   <td className="px-2 py-3.5 text-right">{r.tasksChecked}</td>
                   <td className="px-2 py-3.5 text-right">{r.reviewsDone}</td>
-                  <td className="px-2 py-3.5 text-right font-bold">
+                  <td className="px-2 py-3.5 text-right font-semibold">
                     {r.points}
-                    {inProgress > 0 && <span className="text-xs font-normal text-subtle"> · {inProgress} in progress</span>}
+                    {inProgress > 0 && <span className="text-xs font-normal text-subtle">, {inProgress} in progress</span>}
                   </td>
                 </tr>
               );

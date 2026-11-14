@@ -22,7 +22,7 @@ export function SubmitButton({
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" name={name} value={value} disabled={pending} className={`${btn[variant]} disabled:opacity-60 ${className}`}>
+    <button type="submit" name={name} value={value} disabled={pending} className={`${btn[variant]} ${className}`}>
       {pending ? "Working…" : children}
     </button>
   );
@@ -96,5 +96,5 @@ export function ActionButton({
   );
 }
 
-export const inputClass = "w-full rounded-[10px] border border-line-2 bg-white px-3 py-2.5 text-sm";
-export const labelClass = "text-[13px] font-semibold";
+export const inputClass = "field";
+export const labelClass = "text-sm font-semibold";

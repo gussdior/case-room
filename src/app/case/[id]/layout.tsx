@@ -15,7 +15,7 @@ export default async function CaseLayout({ children, params }: LayoutProps<"/cas
       <AppHeader
         right={
           room?.isSample || room?.viewer === null ? (
-            <span className="rounded-full bg-warn-soft px-2.5 py-1.5 text-xs font-semibold text-warn">
+            <span className="rounded-full bg-mark-soft px-3 py-1.5 text-xs font-semibold text-mark-text">
               Sample case, not a real person
             </span>
           ) : null
@@ -25,7 +25,7 @@ export default async function CaseLayout({ children, params }: LayoutProps<"/cas
           <CaseNav caseId={room.id} pendingCount={showPeople ? pendingRequests(room).length : 0} showPeople={showPeople} />
         )}
       </AppHeader>
-      <main className="mx-auto w-full max-w-[1360px] flex-1 px-4 pt-6 pb-12 sm:px-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1360px] flex-1 px-4 pt-8 pb-16 sm:px-8 lg:px-12">{children}</main>
     </>
   );
 }

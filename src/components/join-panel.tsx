@@ -16,9 +16,9 @@ const RULES = [
 export function JoinPanel({ teaser, viewer }: { teaser: Teaser; viewer: Viewer }) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5">
-      <section className="flex flex-col gap-2 rounded-2xl bg-ink px-6 py-6 text-white">
-        <span className="text-xs font-bold uppercase tracking-widest text-line-2">Goal</span>
-        <h1 className="font-display text-2xl leading-tight font-bold">{teaser.goal}</h1>
+      <section className="flex flex-col gap-2 rounded-[14px] bg-ink px-6 py-6 text-white">
+        <span className="text-xs font-semibold uppercase tracking-widest text-line-2">Goal</span>
+        <h1 className="font-display text-[34px] leading-tight font-medium">{teaser.goal}</h1>
         <p className="text-sm text-line-2">
           {teaser.volunteers} {teaser.volunteers === 1 ? "person" : "people"} on this case. Case details are shown only
           after the creator approves you.
@@ -36,24 +36,24 @@ export function JoinPanel({ teaser, viewer }: { teaser: Teaser; viewer: Viewer }
       </section>
 
       {teaser.myRequest === "pending" ? (
-        <div role="status" className="rounded-2xl border border-line bg-white p-6 text-sm">
+        <div role="status" className="panel p-6 text-sm">
           <Badge tone="warn">Request sent</Badge>
           <p className="mt-2">The case creator will review your request. You&apos;ll see the case here once approved.</p>
         </div>
       ) : teaser.myRequest === "declined" || teaser.myRequest === "removed" ? (
-        <div className="rounded-2xl border border-line bg-white p-6 text-sm text-muted">
+        <div className="panel p-6 text-sm text-muted">
           Thank you for offering to help. The case creator isn&apos;t adding more people to this case right now.{" "}
           <Link href="/cases">See your cases</Link>.
         </div>
       ) : teaser.joinMode === "invite_only" ? (
-        <div className="rounded-2xl border border-line bg-white p-6 text-sm text-muted">
+        <div className="panel p-6 text-sm text-muted">
           This case is invite only right now.
         </div>
       ) : (
-        <ActionForm action={requestToJoin.bind(null, teaser.id)} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6" resetOnSuccess={false}>
-          <h2 className="font-display text-xl font-bold">Ask to join this case</h2>
+        <ActionForm action={requestToJoin.bind(null, teaser.id)} className="flex flex-col gap-4 panel p-6" resetOnSuccess={false}>
+          <h2 className="font-display text-2xl font-medium">Ask to join this case</h2>
           <p className="text-sm text-muted">
-            You&apos;re joining as <strong>{viewer.name}</strong> · {EXPERTISE_LABEL[viewer.expertise]}.{" "}
+            You&apos;re joining as <strong>{viewer.name}</strong>, {EXPERTISE_LABEL[viewer.expertise].toLowerCase()}.{" "}
             <Link href={`/onboarding?next=/case/${teaser.id}`}>Edit profile</Link>
           </p>
           <div className="flex flex-col gap-1.5">

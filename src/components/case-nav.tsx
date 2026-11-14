@@ -15,7 +15,8 @@ export function CaseNav({
   const pathname = usePathname();
   const base = `/case/${caseId}`;
   const links = [
-    { href: base, label: "Brief", exact: true },
+    { href: base, label: "The brief", exact: true },
+    { href: `${base}/tried`, label: "What we tried" },
     { href: `${base}#discussion`, label: "Discussion", exact: true, anchor: true },
     ...(showPeople ? [{ href: `${base}/people`, label: "People", badge: pendingCount }] : []),
     { href: `${base}/leaderboard`, label: "Leaderboard" },
@@ -29,13 +30,11 @@ export function CaseNav({
             key={l.label}
             href={l.href}
             aria-current={active ? "page" : undefined}
-            className={`flex min-h-11 items-center gap-2 rounded-lg px-3.5 text-sm no-underline ${
-              active ? "bg-brand-soft font-semibold text-brand" : "text-muted hover:bg-soft hover:text-ink"
-            }`}
+            className="nav-link"
           >
             {l.label}
             {l.badge ? (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-bad px-1.5 text-[11px] font-bold text-white">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-mark px-1.5 text-[11px] font-bold text-ink">
                 {l.badge}
                 <span className="sr-only"> waiting</span>
               </span>

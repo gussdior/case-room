@@ -10,7 +10,7 @@ export function InviteLink({ caseId }: { caseId: string }) {
   const [copied, setCopied] = useState(false);
   const url = `${origin}/case/${caseId}`;
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-soft p-3 text-xs">
+    <div className="flex flex-col gap-2 rounded-[10px] border border-dashed border-mark-edge bg-mark-tint p-3.5 text-xs text-mark-text">
       <span className="font-semibold">Invite link: people ask to join, the creator approves</span>
       <code className="break-all select-all">{url}</code>
       <button

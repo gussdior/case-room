@@ -113,6 +113,8 @@ export type CaseRoom = {
   visitDate?: string | null;
   isSample: boolean;
   joinMode: "approve" | "invite_only";
+  listed?: boolean;
+  cancerType?: string | null;
   coApproverId?: string;
   creatorId?: string;
   sections: Section[];
@@ -129,4 +131,55 @@ export type Source = {
   kind: "trial" | "paper" | "preprint" | "link";
   peerReviewed: boolean;
   note?: string;
+};
+
+export type TreatmentOutcome = "worked" | "stopped_working" | "side_effects" | "waiting" | "unknown";
+export type FindingStatus = "may_fit" | "ruled_out" | "waiting";
+export type FindingKind = "trial" | "paper" | "treatment_idea" | "insurance" | "other";
+
+export type Treatment = {
+  id: string;
+  title: string;
+  details: string;
+  startedOn: string | null; // YYYY-MM-DD
+  endedOn: string | null;
+  outcome: TreatmentOutcome;
+  outcomeNote: string;
+};
+
+export type Finding = {
+  id: string;
+  taskId: string | null;
+  taskTitle?: string;
+  kind: FindingKind;
+  title: string;
+  summary: string;
+  status: FindingStatus;
+  sources: string[];
+  foundBy: string; // person id, or "ai"
+  checkedBy: string | null; // person id, "ai", or null
+  checkedAt: string | null;
+  createdAt: string;
+};
+
+export const FINDING_STATUS_LABEL: Record<FindingStatus, string> = {
+  may_fit: "May fit her",
+  ruled_out: "Ruled out",
+  waiting: "Waiting on results",
+};
+
+export const FINDING_KIND_LABEL: Record<FindingKind, string> = {
+  trial: "Trial",
+  paper: "Paper",
+  treatment_idea: "Treatment idea",
+  insurance: "Insurance",
+  other: "Other",
+};
+
+export const OUTCOME_LABEL: Record<TreatmentOutcome, string> = {
+  worked: "Worked",
+  stopped_working: "Stopped working",
+  side_effects: "Stopped for side effects",
+  waiting: "Waiting on results",
+  unknown: "Outcome not added",
 };

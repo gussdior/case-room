@@ -1,4 +1,4 @@
-import type { CaseRoom } from "./types";
+import type { CaseRoom, Finding, Treatment } from "./types";
 
 // A made up case. No real person's data.
 export const SAMPLE_CASE: CaseRoom = {
@@ -344,4 +344,115 @@ export const SAMPLE_QUESTIONS = [
   "Should we do a new biopsy to learn why the cancer is growing?",
   "Is a repeat tumor or blood genetic test worth doing now?",
   "Are there trials for EGFR after osimertinib she may qualify for?",
+];
+
+export const SAMPLE_TREATMENTS: Treatment[] = [
+  {
+    id: "tr-dx",
+    title: "Diagnosis: EGFR exon 19 lung cancer",
+    details: "Found in the left lung, with spread to the bones.",
+    startedOn: "2023-11-01",
+    endedOn: null,
+    outcome: "unknown",
+    outcomeNote: "",
+  },
+  {
+    id: "tr-osi",
+    title: "Osimertinib (daily pill)",
+    details: "Shrank the tumor. Mild rash and dry skin.",
+    startedOn: "2023-12-01",
+    endedOn: "2025-10-31",
+    outcome: "worked",
+    outcomeNote: "Worked for 22 months",
+  },
+  {
+    id: "tr-growth",
+    title: "Scan shows growth again",
+    details: "Growing in the lung. Osimertinib stopped working.",
+    startedOn: "2025-11-01",
+    endedOn: null,
+    outcome: "stopped_working",
+    outcomeNote: "",
+  },
+  {
+    id: "tr-biopsy",
+    title: "New biopsy sent for gene testing",
+    details: "Results should show why the drug stopped working.",
+    startedOn: "2025-11-15",
+    endedOn: null,
+    outcome: "waiting",
+    outcomeNote: "",
+  },
+];
+
+export const SAMPLE_FINDINGS: Finding[] = [
+  {
+    id: "f-met",
+    taskId: "t-trials",
+    taskTitle: "Find every open trial for EGFR exon 19 after osimertinib and check the entry rules",
+    kind: "trial",
+    title: "Trial of a MET targeted pill plus osimertinib",
+    summary:
+      "Open in two cities. She fits the entry rules if the new biopsy shows MET amplification. Ask the doctor to test for it.",
+    status: "may_fit",
+    sources: ["https://clinicaltrials.gov/search?cond=EGFR%20lung%20cancer&term=MET"],
+    foundBy: "dana",
+    checkedBy: "priya",
+    checkedAt: "2 days ago",
+    createdAt: "3 days ago",
+  },
+  {
+    id: "f-closed",
+    taskId: null,
+    kind: "trial",
+    title: "An older trial for EGFR after osimertinib",
+    summary: "Closed to new patients in August.",
+    status: "ruled_out",
+    sources: ["https://clinicaltrials.gov/search?cond=EGFR%20lung%20cancer"],
+    foundBy: "ai",
+    checkedBy: "leo",
+    checkedAt: "2 days ago",
+    createdAt: "2 days ago",
+  },
+  {
+    id: "f-chemo",
+    taskId: null,
+    kind: "treatment_idea",
+    title: "Going back to the first line chemo combination",
+    summary: "Guidelines list it after targeted options are used up, not before. Kept here so nobody looks into it again.",
+    status: "ruled_out",
+    sources: ["https://www.cancer.gov/types/lung/hp/non-small-cell-lung-treatment-pdq"],
+    foundBy: "sam",
+    checkedBy: "priya",
+    checkedAt: "5 days ago",
+    createdAt: "6 days ago",
+  },
+  {
+    id: "f-her2",
+    taskId: "t-papers",
+    taskTitle: "Summarize 3 recent papers on drugs used after osimertinib",
+    kind: "paper",
+    title: "HER2 targeted option after osimertinib",
+    summary: "Only worth asking about if the biopsy shows a HER2 change. Comes back to life when results arrive.",
+    status: "waiting",
+    sources: ["https://pubmed.ncbi.nlm.nih.gov/?term=HER2+osimertinib+resistance"],
+    foundBy: "leo",
+    checkedBy: null,
+    checkedAt: null,
+    createdAt: "yesterday",
+  },
+  {
+    id: "f-ins",
+    taskId: "t-coverage",
+    taskTitle: "Find coverage and financial help options for a repeat biopsy",
+    kind: "insurance",
+    title: "Her plan covers routine care costs inside a trial",
+    summary: "Most US plans must cover routine costs when you join an approved trial. Travel is not covered.",
+    status: "may_fit",
+    sources: ["https://www.healthcare.gov/coverage/clinical-trials/"],
+    foundBy: "sam",
+    checkedBy: "dana",
+    checkedAt: "3 days ago",
+    createdAt: "4 days ago",
+  },
 ];

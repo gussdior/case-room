@@ -20,6 +20,7 @@ Rules you always follow:
 - Never ask for or repeat names, birth dates, record numbers, addresses or other IDs. If the volunteer shares one, remind them to remove it.
 - Say plainly when you are unsure, when the tools found nothing, or when the answer needs a doctor to judge.
 - Prefer checking a trial's current status and entry rules with get_trial before listing it.
+- Before suggesting a trial, drug or idea, compare it with "What the team already looked into" and her treatments so far. If it was already ruled out, say so plainly, give the reason recorded there with its source, and don't suggest it again. If she already had a treatment, say so.
 - Keep it short and practical: plain words, short lists, and end with one suggested next step for the task.`;
 
 type Body = { taskId?: unknown; question?: unknown };
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY)
     return json(503, "The AI helper isn't switched on yet. The site owner needs to add an ANTHROPIC_API_KEY.");
 
-  const [{ data: kase }, { data: sections }, { data: history }] = await Promise.all([
+  const [{ data: kase }, { data: sections }, { data: history }, { data: treatments }, { data: findings }] = await Promise.all([
     supabase.from("cases").select("goal, summary, cancer_type, visit_date").eq("id", task.case_id).maybeSingle(),
     supabase.from("brief_sections").select("id, position, title, body").eq("case_id", task.case_id).order("position"),
     supabase
@@ -66,6 +67,18 @@ export async function POST(req: Request) {
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(6),
+    supabase
+      .from("treatments")
+      .select("title, details, started_on, ended_on, outcome, outcome_note")
+      .eq("case_id", task.case_id)
+      .order("started_on", { ascending: true, nullsFirst: false })
+      .limit(30),
+    supabase
+      .from("findings")
+      .select("title, status, summary, sources, checked_by")
+      .eq("case_id", task.case_id)
+      .order("updated_at", { ascending: false })
+      .limit(60),
   ]);
 
   const section = (sections ?? []).find((s) => s.id === task.section_id);
@@ -82,6 +95,22 @@ export async function POST(req: Request) {
     section ? `It fills the brief section: ${section.title}` : "",
     task.why_it_matters ? `Why it matters: ${task.why_it_matters}` : "",
     (task.done_looks_like ?? []).length ? `Done looks like:\n- ${(task.done_looks_like as string[]).join("\n- ")}` : "",
+    (treatments ?? []).length
+      ? `Her treatments so far (from the family):\n${(treatments ?? [])
+          .map(
+            (t) =>
+              `- ${t.title}${t.started_on ? ` (${t.started_on.slice(0, 7)}${t.ended_on ? ` to ${t.ended_on.slice(0, 7)}` : ""})` : ""}: ${t.outcome.replace(/_/g, " ")}${t.outcome_note ? `, ${t.outcome_note}` : ""}${t.details ? `. ${t.details.slice(0, 200)}` : ""}`,
+          )
+          .join("\n")}`
+      : "",
+    (findings ?? []).length
+      ? `What the team already looked into ("What we tried" page). Status is may fit, ruled out, or waiting on results:\n${(findings ?? [])
+          .map(
+            (f) =>
+              `- [${f.status.replace(/_/g, " ")}${f.checked_by ? "" : ", not checked yet"}] ${f.title}: ${f.summary.slice(0, 300)} (source: ${(f.sources ?? [])[0] ?? "none"})`,
+          )
+          .join("\n")}`
+      : "",
   ]
     .filter(Boolean)
     .join("\n\n");
