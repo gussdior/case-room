@@ -26,6 +26,7 @@ const OUR_ERRORS = [
   "Only the task owner can change this",
   "Only the case creator or co-approver can change settings",
   "Only the case creator can choose a co-approver",
+  "Only the case creator can list the case",
   "Pick an approved volunteer",
   "Only the case creator or co-approver can pin",
   "Section does not belong to this case",
@@ -114,13 +115,23 @@ export async function updateCaseSettings(caseId: string, _: Result, form: FormDa
   if (!goal) return { error: "Add a goal." };
   if (visit && !/^\d{4}-\d{2}-\d{2}$/.test(visit)) return { error: "Pick the visit date from the calendar." };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("update_case_settings", {
-    c: caseId,
-    p_goal: goal,
-    p_summary: summary,
-    p_visit: visit,
-    p_join_mode: joinMode,
-  });
+  // Forms with the "listed" switch (creator only) use the newer settings call.
+  const withListing = form.has("listed_present");
+  const cancerType = text(form, "cancer_type", 60);
+  const { error } = await supabase.rpc(
+    "update_case_settings",
+    withListing
+      ? {
+          c: caseId,
+          p_goal: goal,
+          p_summary: summary,
+          p_visit: visit,
+          p_join_mode: joinMode,
+          p_listed: form.get("listed") === "on",
+          p_cancer_type: cancerType,
+        }
+      : { c: caseId, p_goal: goal, p_summary: summary, p_visit: visit, p_join_mode: joinMode },
+  );
   if (error) return friendly(error);
   refresh(caseId);
   return { ok: "Saved." };
@@ -308,7 +319,7 @@ export async function submitWork(caseId: string, taskId: string, _: Result, form
 
   const userId = await getUserId();
   const supabase = await createClient();
-  const { error } = await supabase.from("submissions").insert({ task_id: taskId, author_id: userId, body, sources });
+  const { error } = await supabase.from("submissions").insert({ task_id: taskId, author_id: userId, body, sources, ai_assisted: form.get("ai_assisted") === "on" });
   if (error) return friendly(error);
   refresh(caseId);
   return { ok: "Submitted. It goes into the brief once someone checks it." };

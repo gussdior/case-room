@@ -121,3 +121,12 @@ export type CaseRoom = {
   messages: Message[];
   missingExpertise: string[];
 };
+
+/** A source the AI helper found or cited. */
+export type Source = {
+  url: string;
+  title: string;
+  kind: "trial" | "paper" | "preprint" | "link";
+  peerReviewed: boolean;
+  note?: string;
+};

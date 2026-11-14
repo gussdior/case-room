@@ -65,3 +65,9 @@ Add your site's `/auth/callback` to Authentication > URL Configuration > Redirec
 
 1. Deploy on Vercel with the variables from `.env.example` (set `NEXT_PUBLIC_SITE_URL`).
 2. Add the AI helper: gap drafting, source checks, daily summary.
+
+## Case alerts and the AI helper
+
+- Creators can list a case (`cases.listed`). `listed_cases_for_me()` returns listed cases with open tasks for the caller's expertise. **Alert emails are not sent yet**: that needs a mail sender (Resend) and a scheduled job reading `profiles.alerts_on` and `alert_frequency`.
+- The AI helper (`POST /api/ai/task`) needs `ANTHROPIC_API_KEY` in Vercel. It searches ClinicalTrials.gov, PubMed and bioRxiv/medRxiv, streams its answer as server sent events, and saves the chat to `ai_messages`.
+- `POST /api/ai/check-sources` checks each link before submitting: trial links for current recruitment status, other links for whether they open.

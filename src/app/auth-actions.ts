@@ -62,6 +62,15 @@ function cleanUrl(raw: string): string | null | "invalid" {
   }
 }
 
+function validTimeZone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return tz.length <= 64;
+  } catch {
+    return false;
+  }
+}
+
 export async function saveProfile(_: FormState, form: FormData): Promise<FormState> {
   const id = await getUserId();
   if (!id) return { error: "Your sign in expired. Sign in again." };
@@ -77,10 +86,39 @@ export async function saveProfile(_: FormState, form: FormData): Promise<FormSta
   if (!EXPERTISE_ORDER.includes(expertise)) return { error: "Pick your expertise." };
   if (proof === "invalid") return { error: "The link should start with https://" };
 
+  // Optional fields: only saved when the form has them, so older forms don't clear them.
+  const extra: Record<string, unknown> = {};
+  if (form.has("role_title")) {
+    const role = String(form.get("role_title") ?? "").trim();
+    if (role.length > 80) return { error: "Keep your role under 80 characters." };
+    extra.role_title = role || null;
+  }
+  if (form.has("years")) {
+    const raw = String(form.get("years") ?? "").trim();
+    const years = raw === "" ? null : Number(raw);
+    if (years !== null && (!Number.isInteger(years) || years < 0 || years > 70))
+      return { error: "Years of experience should be a whole number from 0 to 70." };
+    extra.years_experience = years;
+  }
+  if (form.has("time_zone")) {
+    const tz = String(form.get("time_zone") ?? "").trim();
+    if (tz && !validTimeZone(tz)) return { error: "Pick your time zone from the list." };
+    extra.time_zone = tz || null;
+  }
+  if (form.has("areas") || form.has("areas_present")) {
+    const areas = [...new Set(form.getAll("areas").map((a) => String(a).trim()).filter(Boolean))];
+    if (areas.length > 12 || areas.some((a) => a.length > 40)) return { error: "Pick up to 12 areas." };
+    extra.areas = areas;
+  }
+  if (form.has("alerts_present")) {
+    extra.alerts_on = form.get("alerts_on") === "on";
+    extra.alert_frequency = form.get("alert_frequency") === "instant" ? "instant" : "weekly";
+  }
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("profiles")
-    .upsert({ id, display_name: name, headline: headline || null, expertise, proof_url: proof });
+    .upsert({ id, display_name: name, headline: headline || null, expertise, proof_url: proof, ...extra });
   if (error) return { error: "Couldn't save your profile. Try again." };
   redirect(next);
 }
