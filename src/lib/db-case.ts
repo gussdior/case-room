@@ -68,7 +68,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
       )
       .eq("case_id", id)
       .in("status", ["approved", "pending"]),
-    supabase.from("brief_sections").select("id, position, title, body").eq("case_id", id).order("position"),
+    supabase.from("brief_sections").select("id, position, title, body, source_note").eq("case_id", id).order("position"),
     supabase
       .from("tasks")
       .select(
@@ -154,7 +154,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
           : started
             ? `${checked} of ${own.length} parts checked`
             : "Empty";
-    return { id: s.id, position: s.position, title: s.title, body: s.body, status, statusNote };
+    return { id: s.id, position: s.position, title: s.title, body: s.body, status, statusNote, sourceNote: s.source_note ?? undefined };
   });
 
   const messages: Message[] = (messagesRes.data ?? []).map((m) => ({

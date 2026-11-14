@@ -82,6 +82,8 @@ export type Section = {
   body: string;
   status: SectionStatus;
   statusNote: string;
+  /** Where the starting text came from, e.g. the family's documents. */
+  sourceNote?: string;
 };
 
 export type Message = {

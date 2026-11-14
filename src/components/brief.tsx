@@ -103,9 +103,13 @@ export function Brief({
               </span>
             </div>
 
-            {demo && s.body ? (
-              <p className="max-w-[68ch] font-serif text-lg leading-relaxed text-ink-2">{s.body}</p>
-            ) : (
+            {s.body && (demo || s.sourceNote) && (
+              <div className="flex flex-col gap-1.5">
+                <p className="max-w-[68ch] whitespace-pre-line font-serif text-lg leading-relaxed text-ink-2">{s.body}</p>
+                {!demo && s.sourceNote && <span className="text-xs font-semibold text-mark-text">{s.sourceNote}</span>}
+              </div>
+            )}
+            {demo && s.body ? null : (
               checked.map((t) => {
                 const sub = t.submissions.find((x) => (x.checkedBy?.length ?? 0) > 0) ?? t.submissions.at(-1);
                 if (!sub) return null;

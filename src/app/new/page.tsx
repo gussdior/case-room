@@ -1,82 +1,84 @@
-import { createCase } from "@/app/case-actions";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
-import { ActionForm, SubmitButton, inputClass, labelClass } from "@/components/forms";
 import { requireViewer } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { UUID_RE, timeAgo } from "@/lib/time";
+import { loadDraft, loadOpenDrafts } from "@/lib/drafts/db";
+import { ManualForm } from "./manual-form";
+import { Wizard } from "./wizard";
 
 export const metadata = { title: "Start a case | Case Room" };
 
-export default async function NewCasePage() {
-  await requireViewer("/new");
+export default async function NewCasePage({ searchParams }: PageProps<"/new">) {
+  const sp = await searchParams;
+  const draftId = typeof sp.draft === "string" ? sp.draft : "";
+  const manual = sp.manual === "1";
+  const viewer = await requireViewer(draftId ? `/new?draft=${draftId}` : "/new");
+
+  if (manual) {
+    return (
+      <>
+        <AppHeader />
+        <main className="mx-auto flex w-full max-w-[760px] flex-1 flex-col gap-5 px-4 py-12 sm:px-8">
+          <Link href="/new" className="self-start text-sm">
+            Start from documents instead
+          </Link>
+          <h1 className="font-display text-[40px] leading-tight font-medium tracking-[-0.01em]">Write the case yourself</h1>
+          <p className="text-sm leading-relaxed text-muted">
+            You&apos;ll be the case creator: you decide who joins. Volunteers work on small tasks that build one brief of
+            questions and options for the patient&apos;s own doctor. The app never tells anyone what treatment to take.
+          </p>
+          <ManualForm />
+        </main>
+      </>
+    );
+  }
+
+  const supabase = await createClient();
+  if (draftId) {
+    if (!UUID_RE.test(draftId)) redirect("/new");
+    const loaded = await loadDraft(supabase, draftId);
+    if (!loaded) {
+      return (
+        <>
+          <AppHeader />
+          <main className="mx-auto flex w-full max-w-[640px] flex-1 flex-col gap-4 px-4 py-16 sm:px-8">
+            <h1 className="font-display text-4xl font-medium">This draft isn&apos;t here</h1>
+            <p className="text-muted">It may have been deleted, or it belongs to someone else.</p>
+            <Link href="/new" className="btn btn-mark self-start">
+              Start a new case
+            </Link>
+          </main>
+        </>
+      );
+    }
+    if (loaded.draft.caseId) redirect(`/case/${loaded.draft.caseId}`);
+    return (
+      <>
+        <AppHeader />
+        <Wizard userId={viewer.id} initialDraft={loaded.draft} initialDocs={loaded.docs} />
+      </>
+    );
+  }
+
+  const open = await loadOpenDrafts(supabase);
   return (
     <>
       <AppHeader />
-      <main className="mx-auto flex w-full max-w-[760px] flex-1 flex-col gap-5 px-4 py-12 sm:px-8">
-        <h1 className="font-display text-[40px] leading-tight font-medium tracking-[-0.01em]">Start a case</h1>
-        <p className="text-sm leading-relaxed text-muted">
-          You&apos;ll be the case creator: you decide who joins. Volunteers work on small tasks that build one brief of
-          questions and options for the patient&apos;s own doctor. The app never tells anyone what treatment to take.
-        </p>
-
-        <ActionForm action={createCase} resetOnSuccess={false} className="sheet flex flex-col gap-5 px-5 py-8 sm:px-10">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="goal" className={labelClass}>
-              Goal, in one line
-            </label>
-            <input
-              id="goal"
-              name="goal"
-              required
-              maxLength={200}
-              defaultValue="Find the best next treatment options to discuss with the oncologist"
-              className={inputClass}
-            />
+      {open.length > 0 && (
+        <div className="mx-auto w-full max-w-[1360px] px-4 pt-6 sm:px-8 lg:px-12">
+          <div className="flex flex-wrap items-center gap-3 rounded-[12px] border border-mark-edge/50 bg-mark-tint px-4 py-3 text-sm">
+            <strong>You have an unfinished case.</strong>
+            {open.map((d) => (
+              <Link key={d.id} href={`/new?draft=${d.id}`} className="btn btn-secondary min-h-9 px-3 text-[13px]">
+                Continue (saved {timeAgo(d.updated_at)})
+              </Link>
+            ))}
           </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="summary" className={labelClass}>
-              Case summary in plain words
-            </label>
-            <textarea
-              id="summary"
-              name="summary"
-              rows={7}
-              maxLength={4000}
-              placeholder="Age, type and stage of cancer, key test results (like mutations), treatments so far and how they went, what is happening now."
-              className={`${inputClass} resize-y`}
-            />
-            <p className="rounded-[10px] border border-dashed border-mark-edge bg-mark-tint p-3 text-[13px] leading-relaxed text-mark-text">
-              Do not include names, ID or insurance numbers, addresses, phone numbers, dates of birth, or the hospital and
-              doctor names. Approved volunteers will read this.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="visit" className={labelClass}>
-              Next doctor visit (optional)
-            </label>
-            <input id="visit" name="visit" type="date" className={`${inputClass} max-w-56`} />
-          </div>
-
-          <fieldset className="flex flex-col gap-2 rounded-[12px] bg-paper p-4">
-            <legend className="sr-only">Consent and privacy</legend>
-            <label className="flex items-start gap-2.5 text-sm leading-snug">
-              <input type="checkbox" name="consent" required className="mt-1 h-4 w-4 accent-brand" />
-              <span>
-                The patient (or their legal representative) agreed to share this case with approved volunteers.
-              </span>
-            </label>
-            <label className="flex items-start gap-2.5 text-sm leading-snug">
-              <input type="checkbox" name="no_ids" required className="mt-1 h-4 w-4 accent-brand" />
-              <span>The summary has no names, ID numbers, addresses or dates of birth.</span>
-            </label>
-          </fieldset>
-
-          <SubmitButton variant="mark" className="self-start">Create case</SubmitButton>
-          <p className="text-[13px] text-muted">
-            We add starter tasks for every part of the brief. You and volunteers can add more.
-          </p>
-        </ActionForm>
-      </main>
+        </div>
+      )}
+      <Wizard userId={viewer.id} initialDraft={null} initialDocs={[]} />
     </>
   );
 }
