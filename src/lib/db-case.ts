@@ -64,7 +64,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
     supabase
       .from("case_members")
       .select(
-        "user_id, role, status, request_note, hours_per_week, proof_url, ai_note, created_at, profile:profiles!case_members_user_id_fkey(display_name, headline, expertise, proof_url)",
+        "user_id, role, status, expertise, request_note, hours_per_week, proof_url, ai_note, created_at, profile:profiles!case_members_user_id_fkey(display_name, headline, expertise, proof_url)",
       )
       .eq("case_id", id)
       .in("status", ["approved", "pending"]),
@@ -90,7 +90,8 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
       id: m.user_id,
       name: p?.display_name ?? "Volunteer",
       headline: p?.headline ?? "",
-      expertise: p?.expertise ?? "no_medical",
+      // Expertise as approved for this case (fixed at join time), not the current profile.
+      expertise: (m.expertise ?? p?.expertise ?? "no_medical") as Expertise,
       role: m.role as MemberRole,
       status: m.status,
       requestNote: m.request_note ?? undefined,

@@ -34,6 +34,17 @@ export async function sendSignInLink(_: FormState, form: FormData): Promise<Form
   return { ok: email };
 }
 
+export async function verifyCode(_: FormState, form: FormData): Promise<FormState> {
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const token = String(form.get("code") ?? "").replace(/\s/g, "");
+  const next = safeNext(form.get("next"));
+  if (!/^\d{6,10}$/.test(token)) return { error: "Enter the code from the email." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (error) return { error: "That code is wrong or expired. Send a new email." };
+  redirect(next);
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

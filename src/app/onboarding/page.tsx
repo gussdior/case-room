@@ -8,7 +8,7 @@ export const metadata = { title: "Your profile · Case Room" };
 export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
   const sp = await searchParams;
   const next = safeNext(sp.next);
-  if (!(await getUserId())) redirect(`/login?next=${encodeURIComponent(`/onboarding?next=${next}`)}`);
+  if (!(await getUserId())) redirect(`/login?next=${encodeURIComponent(`/onboarding?next=${encodeURIComponent(next)}`)}`);
   const viewer = await getViewer();
 
   return (

@@ -35,10 +35,33 @@ npm run dev
 
 Open http://localhost:3000/case/sample
 
+## Database
+
+Migrations in `supabase/migrations/` run in order (0001 to 0005). Every access rule is enforced in the
+database (row level security and server functions), so the app's checks are only for clearer messages.
+
+Key rules:
+- Only approved members can read a case. Outsiders see only the goal and the skills needed.
+- Expertise is fixed per case when someone joins; editing a profile doesn't change who may check work.
+- Work can be checked only by someone other than its author, the task owner or a helper, who has the
+  same expertise as the task (or is a doctor or nurse), and only on the latest version.
+- Only a human check puts work into the brief. AI checks are notes.
+- Links (sources, proof links) must be http(s).
+
+## Sign in email template
+
+In Supabase > Authentication > Email Templates > Magic Link, use a link that works on any device and
+include the code:
+
+```html
+<h2>Sign in to Case Room</h2>
+<p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email">Sign in</a></p>
+<p>Or enter this code: {{ .Token }}</p>
+```
+
+Add your site's `/auth/callback` to Authentication > URL Configuration > Redirect URLs.
+
 ## Next steps
 
-1. Create a Supabase project and run `supabase/migrations/0001_init.sql` in its SQL editor.
-2. Copy `.env.example` to `.env.local` and fill in the keys.
-3. Connect sign in and swap `src/lib/data.ts` from the sample case to Supabase.
-4. Add the AI helper: gap drafting, source checks, daily summary.
-5. Deploy on Vercel.
+1. Deploy on Vercel with the variables from `.env.example` (set `NEXT_PUBLIC_SITE_URL`).
+2. Add the AI helper: gap drafting, source checks, daily summary.

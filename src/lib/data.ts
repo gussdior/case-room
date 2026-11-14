@@ -81,5 +81,8 @@ export function canCheck(room: CaseRoom, task: Task, authorId: string): boolean 
   const v = room.viewer;
   if (!v || task.status !== "submitted") return false;
   if (v.id === authorId || v.id === task.ownerId) return false;
+  if (task.helperIds.includes(v.id) || task.requestedHelperIds.includes(v.id)) return false;
+  const latest = task.submissions.at(-1);
+  if (!latest || latest.authorId !== authorId || (latest.fixRequests?.length ?? 0) > 0) return false;
   return v.expertise === task.expertise || v.expertise === "doctor_nurse";
 }

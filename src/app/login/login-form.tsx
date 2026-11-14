@@ -1,19 +1,42 @@
 "use client";
 
 import { useActionState } from "react";
-import { sendSignInLink } from "@/app/auth-actions";
+import { sendSignInLink, verifyCode } from "@/app/auth-actions";
 import { FormMessage, SubmitButton, inputClass, labelClass } from "@/components/forms";
 
 export function LoginForm({ next }: { next: string }) {
   const [state, action] = useActionState(sendSignInLink, undefined);
+  const [codeState, codeAction] = useActionState(verifyCode, undefined);
 
   if (state?.ok) {
     return (
-      <div role="status" className="flex flex-col gap-2 rounded-xl bg-ok-soft p-4 text-sm text-ok">
-        <strong>Check your email.</strong>
-        <span>
-          We sent a sign in link to {state.ok}. Open it on this device. It works once and expires in an hour.
-        </span>
+      <div className="flex flex-col gap-4">
+        <div role="status" className="flex flex-col gap-2 rounded-xl bg-ok-soft p-4 text-sm text-ok">
+          <strong>Check your email.</strong>
+          <span>
+            We sent a sign in link to {state.ok}. Tap the link, or type the code from the email below. Check your spam
+            folder if it doesn&apos;t arrive in a minute.
+          </span>
+        </div>
+        <form action={codeAction} className="flex flex-col gap-3">
+          <input type="hidden" name="email" value={state.ok} />
+          <input type="hidden" name="next" value={next} />
+          <label htmlFor="code" className={labelClass}>
+            Code from the email
+          </label>
+          <input
+            id="code"
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={10}
+            className={`${inputClass} max-w-48 tracking-widest`}
+          />
+          <SubmitButton variant="secondary" className="self-start">
+            Sign in with code
+          </SubmitButton>
+          <FormMessage state={codeState} />
+        </form>
       </div>
     );
   }

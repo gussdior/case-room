@@ -31,20 +31,23 @@
   --color-bad-line: #f3c9c9;
 }
 
-body {
-  background: var(--color-canvas);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-}
+/* Base styles live in the base layer so utility classes (like text-white on a button link) win. */
+@layer base {
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
 
-a {
-  color: var(--color-brand);
-}
-a:hover {
-  color: var(--color-brand-dark);
-}
+  a {
+    color: var(--color-brand);
+  }
+  a:hover {
+    color: var(--color-brand-dark);
+  }
 
-:focus-visible {
-  outline: 3px solid var(--color-brand);
-  outline-offset: 2px;
+  :focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 2px;
+  }
 }

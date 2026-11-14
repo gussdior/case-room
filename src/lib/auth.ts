@@ -52,7 +52,16 @@ export async function requireViewer(next: string): Promise<Viewer> {
 
 /** Only allow redirects to paths on this site. */
 export function safeNext(next: unknown, fallback = "/cases"): string {
-  if (typeof next !== "string") return fallback;
-  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return fallback;
-  return next;
+  if (typeof next !== "string" || next.length > 500) return fallback;
+  // No control characters or backslashes (browsers strip or flip them into "//evil.com").
+  if (/[\u0000-\u001f\u007f\\]/.test(next)) return fallback;
+  if (!next.startsWith("/") || next.startsWith("//")) return fallback;
+  try {
+    const base = "http://local.invalid";
+    const u = new URL(next, base);
+    if (u.origin !== base) return fallback;
+    return u.pathname + u.search + u.hash;
+  } catch {
+    return fallback;
+  }
 }

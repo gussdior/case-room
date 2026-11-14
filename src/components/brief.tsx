@@ -86,7 +86,7 @@ export function Brief({
                 <span className={`text-xs font-semibold ${SECTION_TONE[s.status]}`}>{s.statusNote}</span>
               </div>
 
-              {s.body ? (
+              {demo && s.body ? (
                 <p className="text-[15px] leading-relaxed text-ink-2">{s.body}</p>
               ) : (
                 checked.map((t) => {
@@ -108,7 +108,12 @@ export function Brief({
               {submitted.map((t) => {
                 const sub = t.submissions[t.submissions.length - 1];
                 const eligible =
-                  canDoCheck(t.expertise) && (demo || (viewerId !== sub?.authorId && viewerId !== t.ownerId));
+                  canDoCheck(t.expertise) &&
+                  (demo ||
+                    (viewerId !== sub?.authorId &&
+                      viewerId !== t.ownerId &&
+                      !t.helperIds.includes(viewerId ?? "") &&
+                      !(sub?.fixRequests?.length ?? 0)));
                 return (
                   <div key={t.id} className="flex flex-col gap-2.5">
                     {sub && (
