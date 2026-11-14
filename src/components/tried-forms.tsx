@@ -7,7 +7,20 @@ import { ActionForm, SubmitButton, inputClass, labelClass } from "./forms";
 
 const pill = "chip min-h-11 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-white has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-brand";
 
-export function LogFindingForm({ caseId, taskId, demo, idPrefix = "lf" }: { caseId: string; taskId?: string; demo?: boolean; idPrefix?: string }) {
+export function LogFindingForm({
+  caseId,
+  taskId,
+  demo,
+  idPrefix = "lf",
+  defaults,
+}: {
+  caseId: string;
+  taskId?: string;
+  demo?: boolean;
+  idPrefix?: string;
+  /** Prefill from an AI run. */
+  defaults?: { title?: string; summary?: string; sources?: string };
+}) {
   const fields = (
     <>
       {taskId && <input type="hidden" name="task_id" value={taskId} />}
@@ -15,7 +28,7 @@ export function LogFindingForm({ caseId, taskId, demo, idPrefix = "lf" }: { case
         <label htmlFor={`${idPrefix}-title`} className={labelClass}>
           What did you look into?
         </label>
-        <input id={`${idPrefix}-title`} name="title" required minLength={3} maxLength={200} placeholder="e.g. Trial of a MET pill plus osimertinib" className={inputClass} />
+        <input id={`${idPrefix}-title`} name="title" required minLength={3} maxLength={200} defaultValue={defaults?.title} placeholder="e.g. Trial of a MET pill plus osimertinib" className={inputClass} />
       </div>
       <fieldset className="flex flex-col gap-1.5">
         <legend className={`${labelClass} mb-1.5`}>Does it fit her?</legend>
@@ -49,6 +62,7 @@ export function LogFindingForm({ caseId, taskId, demo, idPrefix = "lf" }: { case
           rows={3}
           required
           maxLength={2000}
+          defaultValue={defaults?.summary}
           placeholder="e.g. Closed to new patients in August. Or: fits if the biopsy shows MET."
           className={`${inputClass} resize-y`}
         />
@@ -57,7 +71,7 @@ export function LogFindingForm({ caseId, taskId, demo, idPrefix = "lf" }: { case
         <label htmlFor={`${idPrefix}-sources`} className={labelClass}>
           Source links, one per line
         </label>
-        <textarea id={`${idPrefix}-sources`} name="sources" rows={2} required placeholder="https://" className={`${inputClass} resize-y text-sm`} />
+        <textarea id={`${idPrefix}-sources`} name="sources" rows={2} required defaultValue={defaults?.sources} placeholder="https://" className={`${inputClass} resize-y text-sm`} />
       </div>
     </>
   );

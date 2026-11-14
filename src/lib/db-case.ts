@@ -72,7 +72,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
     supabase
       .from("tasks")
       .select(
-        "id, section_id, title, why_it_matters, done_looks_like, inputs, expertise, minutes, status, owner_id, last_update_at, created_at, helpers:task_helpers(user_id, status), submissions(id, author_id, body, sources, ai_check, created_at, checks(checker_id, is_ai, verdict, note, created_at))",
+        "id, section_id, lead_id, title, why_it_matters, done_looks_like, inputs, expertise, minutes, status, owner_id, last_update_at, created_at, helpers:task_helpers(user_id, status), submissions(id, author_id, body, sources, ai_check, created_at, checks(checker_id, is_ai, verdict, note, created_at))",
       )
       .eq("case_id", id)
       .order("created_at"),
@@ -138,6 +138,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
       stuckReason: t.status === "stuck" ? "needs help" : undefined,
       submissions,
       lastUpdate: timeAgo(t.last_update_at),
+      leadId: t.lead_id ?? null,
     };
   });
 

@@ -4,6 +4,7 @@ import { FindingsLog, type FindingView } from "@/components/findings-log";
 import { ActionButton } from "@/components/forms";
 import { AddTreatmentForm, LogFindingForm } from "@/components/tried-forms";
 import { getRoom, memberById } from "@/lib/data";
+import { loadRun } from "@/lib/db-leads";
 import { loadTried } from "@/lib/db-tried";
 import { OUTCOME_LABEL, type Treatment, type TreatmentOutcome } from "@/lib/types";
 
@@ -59,7 +60,16 @@ export default async function TriedPage({ params, searchParams }: PageProps<"/ca
   }));
   const taskId = typeof sp.task === "string" ? sp.task : undefined;
   const fromTask = taskId ? room.tasks.find((t) => t.id === taskId) : undefined;
-  const openLog = sp.log === "1" || !!fromTask;
+  const runId = typeof sp.run === "string" ? sp.run : undefined;
+  const fromRun = runId && !demo ? await loadRun(room.id, runId) : null;
+  const openLog = sp.log === "1" || !!fromTask || !!fromRun;
+  const prefill = fromRun
+    ? {
+        title: (fromRun.leadTitle ?? fromRun.prompt).slice(0, 200),
+        summary: fromRun.result.replace(/\[(https?:\/\/[^\]\s]+)\]/g, "").slice(0, 2000),
+        sources: fromRun.sources.map((s) => s.url).join("\n"),
+      }
+    : undefined;
 
   return (
     <div className="flex flex-col">
@@ -160,13 +170,13 @@ export default async function TriedPage({ params, searchParams }: PageProps<"/ca
 
           <details id="log" open={openLog} className="group mt-6 scroll-mt-6 rounded-[12px] border border-line">
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between rounded-[12px] px-4 font-semibold transition-colors hover:bg-paper [&::-webkit-details-marker]:hidden">
-              {fromTask ? `Log a finding from "${fromTask.title.length > 50 ? fromTask.title.slice(0, 47) + "..." : fromTask.title}"` : "Log a finding"}
+              {fromRun ? "Log a finding from an AI run" : fromTask ? `Log a finding from "${fromTask.title.length > 50 ? fromTask.title.slice(0, 47) + "..." : fromTask.title}"` : "Log a finding"}
               <span aria-hidden="true" className="text-xl leading-none text-muted transition-transform group-open:rotate-45">
                 +
               </span>
             </summary>
             <div className="border-t border-line p-4">
-              <LogFindingForm caseId={room.id} taskId={fromTask?.id} demo={demo} />
+              <LogFindingForm caseId={room.id} taskId={fromTask?.id ?? fromRun?.taskId ?? undefined} demo={demo} defaults={prefill} />
             </div>
           </details>
 

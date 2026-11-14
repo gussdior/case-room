@@ -10,6 +10,7 @@ import { Avatar, Badge, ExpertiseBadge, PersonLink, btn } from "@/components/ui"
 import { WorkForm } from "@/components/work-form";
 import { getRoom, memberById, taskMessages } from "@/lib/data";
 import { loadAiMessages } from "@/lib/db-profile";
+import { loadLeads } from "@/lib/db-leads";
 import type { Task, TaskStatus } from "@/lib/types";
 
 const STATUS: Record<TaskStatus, { label: string; tone: "neutral" | "brand" | "ok" | "warn" | "bad" }> = {
@@ -63,7 +64,8 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
   const step = stepIndex(task);
   const visit = room.visitInDays;
 
-  const saved = demo ? [] : await loadAiMessages(task.id);
+  const [saved, leads] = await Promise.all([demo ? Promise.resolve([]) : loadAiMessages(task.id), task.leadId ? loadLeads(room.id) : Promise.resolve([])]);
+  const lead = task.leadId ? leads.find((l) => l.id === task.leadId) : undefined;
   const initial: AiTurn[] = demo
     ? SAMPLE_AI
     : saved.map((m) => ({ id: m.id, role: m.role, content: m.content, sources: m.sources, mine: m.userId === v?.id }));
@@ -71,13 +73,32 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
   return (
     <div className="flex flex-col">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-sm text-muted">
-        <Link href={`/case/${room.id}`} className="rounded-lg px-2 py-1 text-muted no-underline transition-colors hover:bg-hover hover:text-ink">
-          The brief
-        </Link>
-        <span aria-hidden="true" className="text-line-2">
-          /
-        </span>
-        <span className="px-2">{section?.title ?? "Task"}</span>
+        {lead ? (
+          <>
+            <Link href={`/case/${room.id}`} className="rounded-lg px-2 py-1 text-muted no-underline transition-colors hover:bg-hover hover:text-ink">
+              Leads
+            </Link>
+            <span aria-hidden="true" className="text-line-2">
+              /
+            </span>
+            <Link
+              href={`/case/${room.id}/lead/${lead.id}`}
+              className="max-w-[420px] truncate rounded-lg px-2 py-1 text-muted no-underline transition-colors hover:bg-hover hover:text-ink"
+            >
+              {lead.title}
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link href={`/case/${room.id}/doctor`} className="rounded-lg px-2 py-1 text-muted no-underline transition-colors hover:bg-hover hover:text-ink">
+              For the doctor
+            </Link>
+            <span aria-hidden="true" className="text-line-2">
+              /
+            </span>
+            <span className="px-2">{section?.title ?? "Task"}</span>
+          </>
+        )}
       </nav>
 
       <header className="mt-4 flex flex-wrap items-start gap-x-8 gap-y-4">
@@ -92,7 +113,17 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
             {task.title}
           </h1>
           <p className="mt-2.5 text-muted">
-            This fills &ldquo;{section?.title}&rdquo; in the brief.
+            {lead ? (
+              <>
+                Part of the lead{" "}
+                <Link href={`/case/${room.id}/lead/${lead.id}`} className="font-semibold">
+                  {lead.title}
+                </Link>
+                .{section ? <> It fills &ldquo;{section.title}&rdquo; for the doctor.</> : null}
+              </>
+            ) : (
+              <>This fills &ldquo;{section?.title}&rdquo; for the doctor.</>
+            )}
             {visit !== null && visit > 0 && ` The doctor visit is in ${visit} day${visit === 1 ? "" : "s"}.`}
             {owner && !isOwner && (
               <>

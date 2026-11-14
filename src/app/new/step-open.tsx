@@ -66,7 +66,7 @@ export function StepOpen({ draft, docs }: { draft: Draft; docs: DraftDoc[] }) {
             setBusy(true);
             setError("");
             const r = await publishDraft(draft.id);
-            if (r.ok) router.push(`/case/${r.caseId}`);
+            if (r.ok) router.push(`/case/${r.caseId}?new=1`);
             else {
               setError(r.error);
               setBusy(false);

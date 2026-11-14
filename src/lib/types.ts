@@ -73,6 +73,7 @@ export type Task = {
   progressNote?: string;
   submissions: Submission[];
   lastUpdate: string;
+  leadId?: string | null;
 };
 
 export type Section = {
@@ -184,4 +185,73 @@ export const OUTCOME_LABEL: Record<TreatmentOutcome, string> = {
   side_effects: "Stopped for side effects",
   waiting: "Waiting on results",
   unknown: "Outcome not added",
+};
+
+export type LeadKind = "trial" | "drug_repurposing" | "vaccine_or_personalized" | "test_or_diagnostic" | "support_or_access" | "other";
+export type LeadStatus = "needs_someone" | "exploring" | "promising" | "ruled_out";
+export type AiTool = "case_room_ai" | "chatgpt" | "claude" | "gemini" | "other";
+
+export const LEAD_KIND_LABEL: Record<LeadKind, string> = {
+  trial: "Clinical trial",
+  drug_repurposing: "Existing drug, new use",
+  vaccine_or_personalized: "Personalized or vaccine",
+  test_or_diagnostic: "Test or scan",
+  support_or_access: "Access and support",
+  other: "Other idea",
+};
+export const LEAD_KINDS = Object.keys(LEAD_KIND_LABEL) as LeadKind[];
+
+export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
+  needs_someone: "Needs someone",
+  exploring: "Exploring",
+  promising: "Promising",
+  ruled_out: "Ruled out",
+};
+
+export const AI_TOOL_LABEL: Record<AiTool, string> = {
+  case_room_ai: "Case Room AI",
+  chatgpt: "ChatGPT",
+  claude: "Claude",
+  gemini: "Gemini",
+  other: "Other AI",
+};
+
+export type SourceCheck = {
+  results?: { url: string; ok: boolean; note: string }[];
+  ok?: number;
+  failed?: number;
+};
+
+export type AiRun = {
+  id: string;
+  leadId: string | null;
+  leadTitle?: string;
+  taskId: string | null;
+  userId: string;
+  tool: AiTool;
+  toolOther: string | null;
+  prompt: string;
+  result: string;
+  sources: Source[];
+  check: SourceCheck;
+  reuseCount: number;
+  createdAt: string; // already "time ago"
+};
+
+export type Lead = {
+  id: string;
+  title: string;
+  idea: string;
+  kind: LeadKind;
+  status: LeadStatus;
+  conditions: { text: string; checked: boolean }[];
+  nextStep: string;
+  nextStepExpertise: Expertise | null;
+  aiSuggested: boolean;
+  ruledOutReason: string | null;
+  createdBy: string;
+  runCount: number;
+  checkedSources: number;
+  people: string[]; // person ids who ran AI or own tasks on it
+  updatedAt: string;
 };

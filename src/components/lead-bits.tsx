@@ -1,0 +1,184 @@
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { AI_TOOL_LABEL, LEAD_STATUS_LABEL, type AiRun, type Lead, type LeadStatus, type Member } from "@/lib/types";
+import { RunActions } from "./run-actions";
+import { Avatar, ExpertiseBadge, PersonLink } from "./ui";
+
+export const STATUS_TONE: Record<LeadStatus, string> = {
+  promising: "bg-ok-soft text-ok",
+  exploring: "bg-brand-soft text-brand",
+  needs_someone: "bg-mark-soft text-mark-text",
+  ruled_out: "bg-soft text-muted",
+};
+
+export function LeadStatusChip({ status }: { status: LeadStatus }) {
+  return (
+    <span className={`inline-flex self-start rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${STATUS_TONE[status]}`}>
+      {LEAD_STATUS_LABEL[status]}
+    </span>
+  );
+}
+
+function Faces({ ids, members }: { ids: string[]; members: Member[] }) {
+  const people = ids.map((id) => members.find((m) => m.id === id)).filter((m): m is Member => !!m);
+  if (people.length === 0) return null;
+  return (
+    <span className="flex" aria-label={`${people.length} ${people.length === 1 ? "person" : "people"} on it`}>
+      {people.slice(0, 5).map((p, i) => (
+        <span key={p.id} className={`rounded-full border-2 border-white ${i ? "-ml-1.5" : ""}`}>
+          <Avatar person={p} size={24} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** One lead in the list: lifts on hover, ruled out ones fade back. */
+export function LeadCard({ caseId, lead, members }: { caseId: string; lead: Lead; members: Member[] }) {
+  const out = lead.status === "ruled_out";
+  return (
+    <Link
+      href={`/case/${caseId}/lead/${lead.id}`}
+      className={`group grid grid-cols-[minmax(0,1fr)_auto] gap-x-5 gap-y-2.5 rounded-[14px] border border-line bg-white px-[22px] py-5 text-ink no-underline transition-[border-color,transform,box-shadow,opacity] duration-150 hover:-translate-y-0.5 hover:border-brand-line hover:text-ink hover:shadow-[0_14px_30px_-20px_rgba(43,63,160,0.55)] ${
+        out ? "opacity-75 hover:opacity-100" : ""
+      }`}
+    >
+      <div className="min-w-0">
+        <h3 className="font-display text-[22px] leading-tight font-medium">{lead.title}</h3>
+        {(lead.idea || lead.ruledOutReason) && (
+          <p className="mt-1 text-[15px] text-ink-2">{out && lead.ruledOutReason ? lead.ruledOutReason : lead.idea}</p>
+        )}
+      </div>
+      <LeadStatusChip status={lead.status} />
+      <div className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted">
+        <span>
+          <b className="text-ink">{lead.runCount}</b> AI {lead.runCount === 1 ? "run" : "runs"}
+        </span>
+        {lead.checkedSources > 0 && (
+          <span>
+            <b className="text-ink">{lead.checkedSources}</b> {lead.checkedSources === 1 ? "source" : "sources"} checked
+          </span>
+        )}
+        <Faces ids={lead.people} members={members} />
+        {lead.aiSuggested && lead.runCount === 0 && <span>Suggested by the AI from the case</span>}
+        {out && <span>Logged on What we tried</span>}
+      </div>
+      {!out && lead.nextStep && lead.status !== "promising" && (
+        <div className="col-span-2 flex items-center gap-2.5 rounded-[10px] bg-[#f6f7f6] px-3 py-2.5 text-sm">
+          <i aria-hidden="true" className="h-2 w-2 flex-none rounded-full bg-mark shadow-[0_0_0_3px_var(--color-mark-soft)]" />
+          <span className="min-w-0 flex-1">{lead.nextStep}</span>
+          {lead.nextStepExpertise && <ExpertiseBadge expertise={lead.nextStepExpertise} />}
+        </div>
+      )}
+      {!out && lead.nextStep && lead.status === "promising" && (
+        <div className="col-span-2 text-[13px] text-muted">{lead.nextStep}</div>
+      )}
+    </Link>
+  );
+}
+
+function CheckLine({ run }: { run: AiRun }) {
+  const failed = Number(run.check.failed) || 0;
+  const ok = Number(run.check.ok) || 0;
+  if (failed > 0)
+    return (
+      <span className="text-xs font-semibold text-bad">
+        {failed} of {failed + ok} {failed + ok === 1 ? "link" : "links"} failed the source check
+      </span>
+    );
+  if (ok > 0)
+    return (
+      <span className="text-xs font-semibold text-ok">
+        {run.tool === "case_room_ai" ? "Sources from its searches" : "Sources checked"}
+      </span>
+    );
+  return <span className="text-xs font-semibold text-mark-text">No source links</span>;
+}
+
+/** One AI run: who, which AI, the prompt, what came back, and whether the sources held up. */
+export function RunItem({
+  caseId,
+  run,
+  members,
+  demo,
+  viewerId,
+  onLead,
+  showLead,
+  first,
+}: {
+  caseId: string;
+  run: AiRun;
+  members: Member[];
+  demo: boolean;
+  viewerId?: string;
+  /** On a lead page, "Reuse prompt" fills the Ask box instead of copying. */
+  onLead?: boolean;
+  showLead?: boolean;
+  first?: boolean;
+}) {
+  const who = members.find((m) => m.id === run.userId);
+  const failedLinks = (run.check.results ?? []).filter((r) => !r.ok);
+  const toolName = run.tool === "other" && run.toolOther ? run.toolOther : AI_TOOL_LABEL[run.tool];
+  return (
+    <article className={`py-3.5 ${first ? "" : "border-t border-line"}`}>
+      <div className="flex flex-wrap items-center gap-2 text-[13px]">
+        {who ? <Avatar person={who} size={26} /> : <Avatar ai size={26} />}
+        {who ? <PersonLink person={who} className="font-semibold" /> : <b>Former member</b>}
+        <span className="rounded-lg bg-soft px-2 py-0.5 font-semibold">{toolName}</span>
+        <span className="text-muted">{run.createdAt}</span>
+      </div>
+      {showLead && run.leadTitle && run.leadId && (
+        <Link href={`/case/${caseId}/lead/${run.leadId}`} className="mt-1.5 inline-block text-xs font-semibold no-underline hover:underline">
+          {run.leadTitle}
+        </Link>
+      )}
+      <p className="mt-2 mb-1.5 rounded-[10px] border-l-[3px] border-brand bg-[#f6f7f6] px-3 py-2.5 text-sm">{run.prompt}</p>
+      <p className="max-w-[68ch] font-serif text-base leading-normal whitespace-pre-line text-ink-2">
+        {run.result.length > 600 ? `${run.result.slice(0, 600).trimEnd()}...` : run.result}
+      </p>
+      {run.sources.length > 0 && (
+        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Sources">
+          {run.sources.slice(0, 6).map((s, n) => (
+            <li key={s.url}>
+              <a
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="inline-flex rounded-full border border-line px-2.5 py-1 text-xs no-underline transition-colors hover:border-brand-line hover:bg-brand-tint"
+              >
+                {s.kind === "preprint" ? `Preprint ${n + 1}, not peer reviewed` : `Source ${n + 1}`}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {failedLinks.length > 0 && (
+        <ul className="mt-2 flex flex-col gap-1">
+          {failedLinks.slice(0, 3).map((f) => (
+            <li key={f.url} className="rounded-lg bg-bad-tint px-2.5 py-1.5 text-xs text-bad">
+              <span className="break-all">{f.url}</span>: {f.note}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <CheckLine run={run} />
+        <RunActions
+          caseId={caseId}
+          runId={run.id}
+          prompt={run.prompt}
+          result={run.result}
+          firstSource={run.sources[0]?.url}
+          onLead={!!onLead}
+          demo={demo}
+          own={!!viewerId && viewerId === run.userId}
+          reuseCount={run.reuseCount}
+        />
+      </div>
+    </article>
+  );
+}
+
+export function RailHeading({ children }: { children: ReactNode }) {
+  return <h2 className="mb-3 text-[15px] font-bold">{children}</h2>;
+}

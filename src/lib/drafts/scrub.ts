@@ -64,3 +64,21 @@ export function scrubDeep<T>(value: T, hits: ScrubHit[] = []): T {
   }
   return value;
 }
+
+const LINK = /https?:\/\/[^\s<>"'\])]+/gi;
+
+/** Like scrub, but links stay exactly as they are, so PubMed and trial numbers inside URLs survive. */
+export function scrubKeepLinks(text: string): { text: string; hits: ScrubHit[] } {
+  const hits: ScrubHit[] = [];
+  let out = "";
+  let last = 0;
+  for (const m of text.matchAll(LINK)) {
+    const r = scrub(text.slice(last, m.index));
+    hits.push(...r.hits);
+    out += r.text + m[0];
+    last = (m.index ?? 0) + m[0].length;
+  }
+  const r = scrub(text.slice(last));
+  hits.push(...r.hits);
+  return { text: out + r.text, hits };
+}

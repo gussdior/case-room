@@ -4,6 +4,8 @@ import { UUID_RE } from "@/lib/time";
 import { EXPERTISE_LABEL, type Expertise } from "@/lib/types";
 import type { Source } from "@/lib/types";
 import { TOOL_DEFS, TOOL_LABEL, runTool } from "@/lib/ai/tools";
+import { saveRun, saveTaskExchange } from "@/lib/ai/runs";
+import { LEAD_KIND_LABEL, LEAD_STATUS_LABEL, type LeadKind, type LeadStatus } from "@/lib/types";
 
 export const maxDuration = 60;
 
@@ -11,7 +13,7 @@ const MODEL = "claude-sonnet-5-5";
 const MAX_TURNS = 5;
 
 const SYSTEM = `You are the research helper inside Case Room, where volunteers work together on one cancer patient's case.
-You help one volunteer do their task well: find trials, papers and facts, and turn them into good questions.
+You help one volunteer do their task or check one lead (an idea the team is investigating) well: find trials, papers and facts, and turn them into good questions.
 
 Rules you always follow:
 - Everything you write is research and questions for the patient's own doctor. Never give treatment advice, never say what the patient should take, start or stop, and never predict outcomes.
@@ -23,7 +25,7 @@ Rules you always follow:
 - Before suggesting a trial, drug or idea, compare it with "What the team already looked into" and her treatments so far. If it was already ruled out, say so plainly, give the reason recorded there with its source, and don't suggest it again. If she already had a treatment, say so.
 - Keep it short and practical: plain words, short lists, and end with one suggested next step for the task.`;
 
-type Body = { taskId?: unknown; question?: unknown };
+type Body = { taskId?: unknown; leadId?: unknown; question?: unknown };
 
 function json(status: number, error: string) {
   return Response.json({ error }, { status });
@@ -34,11 +36,12 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as Body;
   } catch {
-    return json(400, "Send JSON with taskId and question.");
+    return json(400, "Send JSON with a taskId or leadId, and a question.");
   }
   const taskId = typeof body.taskId === "string" ? body.taskId : "";
+  const leadOnlyId = typeof body.leadId === "string" ? body.leadId : "";
   const question = typeof body.question === "string" ? body.question.trim().slice(0, 4000) : "";
-  if (!UUID_RE.test(taskId)) return json(400, "That task link is broken.");
+  if (taskId ? !UUID_RE.test(taskId) : !UUID_RE.test(leadOnlyId)) return json(400, "That link is broken.");
   if (question.length < 2) return json(400, "Type a question first.");
 
   const supabase = await createClient();
@@ -46,42 +49,70 @@ export async function POST(req: Request) {
   const userId = claims?.claims?.sub as string | undefined;
   if (!userId) return json(401, "Sign in to use the AI helper.");
 
-  // Row level security only returns the task to approved members of its case.
-  const { data: task } = await supabase
-    .from("tasks")
-    .select("id, case_id, section_id, title, why_it_matters, done_looks_like, inputs, expertise, status, owner_id")
-    .eq("id", taskId)
-    .maybeSingle();
-  if (!task) return json(403, "Join this case to use the AI helper on its tasks.");
+  // Row level security only returns the task or lead to approved members of its case.
+  const { data: task } = taskId
+    ? await supabase
+        .from("tasks")
+        .select("id, case_id, section_id, lead_id, title, why_it_matters, done_looks_like, inputs, expertise, status, owner_id")
+        .eq("id", taskId)
+        .maybeSingle()
+    : { data: null };
+  if (taskId && !task) return json(403, "Join this case to use the AI helper on its tasks.");
+  const leadId = task ? (task.lead_id as string | null) : leadOnlyId;
+  const { data: lead } = leadId
+    ? await supabase
+        .from("leads")
+        .select("id, case_id, title, idea, kind, status, conditions, next_step, ruled_out_reason")
+        .eq("id", leadId)
+        .maybeSingle()
+    : { data: null };
+  if (!task && !lead) return json(403, "Join this case to use the AI helper.");
+  const caseId = (task?.case_id ?? lead?.case_id) as string;
 
   if (!process.env.ANTHROPIC_API_KEY)
     return json(503, "The AI helper isn't switched on yet. The site owner needs to add an ANTHROPIC_API_KEY.");
 
   const [{ data: kase }, { data: sections }, { data: history }, { data: treatments }, { data: findings }] = await Promise.all([
-    supabase.from("cases").select("goal, summary, cancer_type, visit_date").eq("id", task.case_id).maybeSingle(),
-    supabase.from("brief_sections").select("id, position, title, body").eq("case_id", task.case_id).order("position"),
-    supabase
-      .from("ai_messages")
-      .select("role, content")
-      .eq("task_id", taskId)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(6),
+    supabase.from("cases").select("goal, summary, cancer_type, visit_date").eq("id", caseId).maybeSingle(),
+    supabase.from("brief_sections").select("id, position, title, body").eq("case_id", caseId).order("position"),
+    task
+      ? supabase
+          .from("ai_messages")
+          .select("role, content")
+          .eq("task_id", taskId)
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(6)
+      : supabase
+          .from("ai_runs")
+          .select("prompt, result")
+          .eq("lead_id", leadId as string)
+          .eq("user_id", userId)
+          .eq("tool", "case_room_ai")
+          .order("created_at", { ascending: false })
+          .limit(3)
+          .then(({ data }) => ({
+            data: (data ?? []).flatMap((r) => [
+              { role: "assistant", content: r.result },
+              { role: "user", content: r.prompt },
+            ]),
+          })),
     supabase
       .from("treatments")
       .select("title, details, started_on, ended_on, outcome, outcome_note")
-      .eq("case_id", task.case_id)
+      .eq("case_id", caseId)
       .order("started_on", { ascending: true, nullsFirst: false })
       .limit(30),
     supabase
       .from("findings")
       .select("title, status, summary, sources, checked_by")
-      .eq("case_id", task.case_id)
+      .eq("case_id", caseId)
       .order("updated_at", { ascending: false })
       .limit(60),
   ]);
 
-  const section = (sections ?? []).find((s) => s.id === task.section_id);
+  const section = task ? (sections ?? []).find((s) => s.id === task.section_id) : undefined;
+  const conds = (Array.isArray(lead?.conditions) ? lead.conditions : []) as { text: string; checked?: boolean }[];
   const context = [
     `Case goal: ${kase?.goal ?? ""}`,
     kase?.cancer_type ? `Cancer type: ${kase.cancer_type}` : "",
@@ -90,11 +121,14 @@ export async function POST(req: Request) {
     `Brief sections so far:\n${(sections ?? [])
       .map((s) => `${s.position}. ${s.title}${s.body ? `: ${s.body.slice(0, 600)}` : " (empty)"}`)
       .join("\n")}`,
-    `This task: ${task.title}`,
-    `Expertise it needs: ${EXPERTISE_LABEL[task.expertise as Expertise] ?? task.expertise}`,
+    task ? `This task: ${task.title}` : "",
+    task ? `Expertise it needs: ${EXPERTISE_LABEL[task.expertise as Expertise] ?? task.expertise}` : "",
     section ? `It fills the brief section: ${section.title}` : "",
-    task.why_it_matters ? `Why it matters: ${task.why_it_matters}` : "",
-    (task.done_looks_like ?? []).length ? `Done looks like:\n- ${(task.done_looks_like as string[]).join("\n- ")}` : "",
+    task?.why_it_matters ? `Why it matters: ${task.why_it_matters}` : "",
+    task && (task.done_looks_like ?? []).length ? `Done looks like:\n- ${(task.done_looks_like as string[]).join("\n- ")}` : "",
+    lead
+      ? `${task ? "This task belongs to the lead" : "The lead (an idea the team is investigating)"}: ${lead.title} (${LEAD_KIND_LABEL[lead.kind as LeadKind]}, ${LEAD_STATUS_LABEL[lead.status as LeadStatus].toLowerCase()})${lead.idea ? `\n${lead.idea}` : ""}${conds.length ? `\nWhat would need to be true:\n${conds.map((c) => `- ${c.checked ? "[confirmed]" : "[open]"} ${c.text}`).join("\n")}` : ""}${lead.next_step ? `\nNext step: ${lead.next_step}` : ""}${lead.ruled_out_reason ? `\nRuled out because: ${lead.ruled_out_reason}` : ""}`
+      : "",
     (treatments ?? []).length
       ? `Her treatments so far (from the family):\n${(treatments ?? [])
           .map(
@@ -184,8 +218,19 @@ export async function POST(req: Request) {
         send("sources", { sources });
 
         if (answer.trim()) {
-          const { error } = await supabase.rpc("save_ai_exchange", { t: taskId, question, answer: answer.trim(), sources });
-          if (error) send("status", { text: "Answer not saved to the task." });
+          const okChat = task ? await saveTaskExchange(supabase, userId, taskId, question, answer.trim(), sources) : true;
+          const run = await saveRun(supabase, userId, {
+            caseId,
+            leadId: leadId || null,
+            taskId: task ? taskId : null,
+            tool: "case_room_ai",
+            prompt: question,
+            result: answer.trim(),
+            sources,
+            check: { ok: sources.length, failed: 0 },
+          });
+          if (!okChat || run.error) send("status", { text: "Answer not saved." });
+          else if (run.id) send("run", { id: run.id });
         }
         send("done", {});
       } catch (e) {

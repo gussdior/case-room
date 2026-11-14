@@ -42,7 +42,7 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
     <div className="mx-auto flex max-w-[1136px] flex-col gap-5">
       <div className="flex flex-col gap-1.5">
         <nav aria-label="Breadcrumb" className="text-[13px] text-subtle">
-          <Link href={`/case/${room.id}`}>The brief</Link> / Leaderboard
+          <Link href={`/case/${room.id}`}>Leads</Link> / Leaderboard
         </nav>
         <h1 className="font-display text-[38px] leading-tight font-medium tracking-[-0.01em]">Contributions leaderboard</h1>
         <p className="text-sm text-subtle">

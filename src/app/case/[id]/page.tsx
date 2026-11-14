@@ -1,36 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AddGapForm } from "@/components/add-gap-form";
-import { Brief } from "@/components/brief";
-import { DemoButton } from "@/components/demo-button";
-import { InviteLink } from "@/components/invite-link";
+import { CaseAiBar } from "@/components/case-ai-bar";
 import { JoinPanel } from "@/components/join-panel";
-import { Composer, MessageItem } from "@/components/message-list";
-import { Avatar, ExpertiseBadge, PersonLink, btn } from "@/components/ui";
+import { LeadCard, RailHeading, RunItem } from "@/components/lead-bits";
+import { AddLeadForm } from "@/components/lead-forms";
+import { SuggestLeadsButton } from "@/components/suggest-leads";
+import { toolsForCase } from "@/lib/ai-tools";
 import { getViewer } from "@/lib/auth";
-import { caseMessages, getRoom, stuckOrWaiting, volunteers } from "@/lib/data";
-import { SAMPLE_QUESTIONS } from "@/lib/sample-case";
-import type { CaseRoom, Task } from "@/lib/types";
+import { getRoom, volunteers } from "@/lib/data";
+import { loadLeads, loadRuns } from "@/lib/db-leads";
 
-const SEGMENT = { checked: "bg-ok", draft: "bg-brand", empty: "bg-[#dde1dd]" } as const;
-
-/** The one thing this person should do next. */
-function nextStep(room: CaseRoom): { title: string; task?: Task; label: string } | null {
-  const v = room.viewer;
-  const exp = v?.expertise ?? "researcher";
-  const mine = v ? room.tasks.find((t) => t.ownerId === v.id && (t.status === "taken" || t.status === "stuck")) : undefined;
-  if (mine) return { title: mine.progressNote || mine.title, task: mine, label: "Continue my task" };
-  const check = room.tasks.find(
-    (t) => t.status === "submitted" && (t.expertise === exp || exp === "doctor_nurse") && t.ownerId !== v?.id,
-  );
-  if (check) return { title: `Check: ${check.title}`, task: check, label: "Check this work" };
-  const open = room.tasks.find((t) => t.status === "open" && t.expertise === exp);
-  if (open) return { title: open.title, task: open, label: "Open this task" };
-  return null;
-}
-
-export default async function CasePage({ params }: PageProps<"/case/[id]">) {
+export default async function LeadsPage({ params, searchParams }: PageProps<"/case/[id]">) {
   const { id } = await params;
+  const sp = await searchParams;
   const loaded = await getRoom(id);
   if (!loaded) notFound();
   if (loaded.teaser) {
@@ -40,32 +22,26 @@ export default async function CasePage({ params }: PageProps<"/case/[id]">) {
   }
   const room = loaded.room;
   const demo = room.viewer === null;
-
-  const members = volunteers(room);
-  const discussion = caseMessages(room);
-  const pinned = discussion.filter((m) => m.pinned);
-  const recent = discussion.filter((m) => !m.pinned).slice(-6);
-  const messageCounts = Object.fromEntries(
-    room.tasks.map((t) => [t.id, room.messages.filter((m) => m.taskId === t.id).length]),
-  );
-  const needsHelp = stuckOrWaiting(room).filter((t) => t.status === "stuck");
-  const counts = {
-    checked: room.sections.filter((s) => s.status === "checked").length,
-    draft: room.sections.filter((s) => s.status === "draft").length,
-    empty: room.sections.filter((s) => s.status === "empty").length,
-  };
-  const next = nextStep(room);
+  const [leads, runs] = await Promise.all([loadLeads(room.id), loadRuns(room.id, { limit: 3 })]);
+  const people = volunteers(room).length;
+  const openKinds = leads.filter((l) => l.status !== "ruled_out").map((l) => l.kind);
+  const tools = toolsForCase(openKinds, 4);
+  const canSuggest = demo || !!room.viewer?.isAdmin;
+  const facts = room.cancerType ?? room.facts.find((f) => f.label === "Key mutation")?.value;
 
   return (
     <div className="flex flex-col">
-      <section aria-label="Goal" className="flex flex-wrap items-end gap-x-10 gap-y-4">
+      <section aria-label="Case" className="flex flex-wrap items-end gap-x-10 gap-y-4">
         <div className="min-w-0 flex-[1_1_560px]">
           <h1 className="max-w-[820px] font-display text-[34px] leading-[1.1] font-medium tracking-[-0.015em] sm:text-[44px]">
             {room.goal}
           </h1>
-          <p className="mt-3 max-w-[640px] text-base text-muted">
-            {members.length} {members.length === 1 ? "person is" : "people are"} helping build one brief for the family.
-            Questions and options only, never treatment advice.
+          <p className="mt-3 max-w-[660px] text-base text-muted">
+            {facts ? `${facts}. ` : ""}
+            {people > 0
+              ? `${people} ${people === 1 ? "person is" : "people are"} using AI to look for her next options. `
+              : "Volunteers use AI to look for her next options. "}
+            Everything checked goes to her doctor as questions.
           </p>
         </div>
         {room.visitInDays !== null && (
@@ -82,168 +58,104 @@ export default async function CasePage({ params }: PageProps<"/case/[id]">) {
         )}
       </section>
 
-      <div
-        className="mt-7 flex gap-1.5"
-        role="img"
-        aria-label={`Brief progress: ${counts.checked} of ${room.sections.length} parts checked`}
-      >
-        {room.sections.map((s) => (
-          <i key={s.id} className={`h-1.5 flex-1 rounded-full ${SEGMENT[s.status]}`} />
-        ))}
-      </div>
-      <div className="mt-2 flex flex-wrap gap-x-5 text-[13px] text-muted">
-        <span>
-          <b className="text-ok">{counts.checked} checked</b>
-        </span>
-        <span>
-          <b className="text-brand">{counts.draft} in progress</b>
-        </span>
-        <span>{counts.empty} need people</span>
-      </div>
+      <CaseAiBar caseId={room.id} demo={demo} />
 
-      {room.summary && !demo && (
-        <section aria-label="Case summary" className="mt-8 max-w-[860px] border-l-[3px] border-mark py-1 pl-5">
-          <h2 className="text-sm font-semibold text-muted">Case summary</h2>
-          <p className="mt-1 whitespace-pre-line font-serif text-lg leading-relaxed text-ink-2">{room.summary}</p>
-          <span className="text-xs text-subtle">Shared with consent. Names and ID numbers removed.</span>
-        </section>
-      )}
+      <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <section aria-labelledby="leads-h" className="min-w-0">
+          <div className="mb-3.5 flex flex-wrap items-baseline gap-x-3 gap-y-2">
+            <h2 id="leads-h" className="font-display text-[28px] font-medium">
+              Leads
+            </h2>
+            <span className="text-sm text-muted">Ideas the team is checking</span>
+            <a href="#add-lead" className="btn btn-secondary ml-auto">
+              Add a lead
+            </a>
+          </div>
 
-      <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-w-0 flex-col gap-8">
-          <Brief
-            caseId={room.id}
-            demo={demo}
-            viewerId={room.viewer?.id}
-            viewerExpertise={room.viewer?.expertise}
-            sections={room.sections}
-            tasks={room.tasks}
-            members={room.members}
-            messageCounts={messageCounts}
-            questions={demo ? SAMPLE_QUESTIONS : []}
-          />
-          {!demo && (
-            <details className="panel group p-5 sm:p-6">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
-                <span>
-                  <span id="add-gap" className="block scroll-mt-6 font-display text-xl font-medium">
-                    Suggest a missing gap
-                  </span>
-                  <span className="text-sm text-muted">See something the brief needs that no task covers? Add a small task.</span>
-                </span>
-                <span className="text-sm font-semibold text-brand group-open:hidden">Add a gap</span>
-              </summary>
-              <div className="mt-4 border-t border-line pt-4">
-                <AddGapForm caseId={room.id} sections={room.sections} />
-              </div>
-            </details>
+          {leads.length === 0 ? (
+            <div className="panel flex flex-col items-start gap-3 p-6">
+              <h3 className="font-display text-xl font-medium">No leads yet</h3>
+              <p className="max-w-[60ch] text-sm text-muted">
+                A lead is one idea to check: a trial, an existing drug used a new way, a test worth asking about.
+                {canSuggest ? " Let the AI read the case and suggest a few, or add your own below." : " Add the first one below."}
+              </p>
+              {canSuggest && <SuggestLeadsButton caseId={room.id} demo={demo} primary autoStart={sp.new === "1"} />}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {leads.map((l) => (
+                <LeadCard key={l.id} caseId={room.id} lead={l} members={room.members} />
+              ))}
+            </div>
           )}
-        </div>
+
+          <details id="add-lead" className="panel group mt-5 scroll-mt-6 p-5 sm:p-6">
+            <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center justify-between gap-3">
+              <span>
+                <span className="block font-display text-xl font-medium">Add a lead</span>
+                <span className="text-sm text-muted">Found something worth checking? Add it so others can run AI on it too.</span>
+              </span>
+              <span className="text-sm font-semibold text-brand group-open:hidden">Add a lead</span>
+            </summary>
+            <div className="mt-4 border-t border-line pt-4">
+              <AddLeadForm caseId={room.id} demo={demo} />
+            </div>
+          </details>
+          {canSuggest && leads.length > 0 && (
+            <div className="mt-4">
+              <SuggestLeadsButton caseId={room.id} demo={demo} />
+            </div>
+          )}
+        </section>
 
         <aside className="flex min-w-0 flex-col gap-9">
-          {next && (
-            <section aria-label="Your next step" className="rounded-[14px] bg-ink p-[22px] text-white">
-              <p className="text-sm text-[#c9cfd8]">Your next step</p>
-              <h2 className="mt-1.5 mb-4 font-display text-[22px] leading-tight font-medium">{next.title}</h2>
-              <div className="flex flex-wrap gap-2">
-                {demo ? (
-                  <DemoButton variant="mark">{next.label}</DemoButton>
-                ) : next.task ? (
-                  <Link href={`/case/${room.id}/task/${next.task.id}`} className={btn.mark}>
-                    {next.label}
-                  </Link>
-                ) : null}
-                {next.task && (
-                  <Link
-                    href={`/case/${room.id}/task/${next.task.id}#ai`}
-                    className="btn border border-[#4a5563] text-white hover:bg-[#26303d] hover:text-white"
-                  >
-                    Ask AI
-                  </Link>
-                )}
-              </div>
-            </section>
-          )}
-
-          {needsHelp.length > 0 && (
-            <section aria-label="Stuck tasks" className="flex flex-col gap-2">
-              <h2 className="font-semibold">Stuck, needs a hand</h2>
-              {needsHelp.map((t) => (
-                <Link key={t.id} href={`/case/${room.id}/task/${t.id}#help`} className="row-link border-bad-line bg-bad-tint text-sm">
-                  <span className="flex-1">{t.title}</span>
-                </Link>
-              ))}
-            </section>
-          )}
-
-          <section aria-label="Who is helping">
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="font-semibold">Who is helping</h2>
-              {(demo || room.viewer?.isAdmin) && (
-                <Link href={`/case/${room.id}/people`} className="text-[13px] font-semibold">
-                  Manage people
-                </Link>
-              )}
+          <section aria-label="Latest AI runs">
+            <div className="flex items-baseline justify-between">
+              <RailHeading>Latest AI runs</RailHeading>
+              <Link href={`/case/${room.id}/runs`} className="text-[13px] font-semibold">
+                See all
+              </Link>
             </div>
-            {members.length === 0 ? (
-              <p className="text-sm text-muted">No volunteers yet. Share the invite link below.</p>
-            ) : (
-              <ul className="-mx-2 flex flex-col">
-                {members.map((m) => (
-                  <li key={m.id} className="flex items-center gap-3 rounded-[10px] px-2 py-2.5 transition-colors hover:bg-hover">
-                    <Avatar person={m} size={34} />
-                    <div className="min-w-0 flex-1">
-                      <PersonLink person={m} className="text-sm font-semibold" />
-                      {m.id === room.viewer?.id && <span className="text-sm text-muted"> (you)</span>}
-                      {m.headline && <div className="truncate text-xs text-muted">{m.headline}</div>}
-                    </div>
-                    <ExpertiseBadge expertise={m.expertise} />
-                  </li>
-                ))}
-              </ul>
-            )}
-            {room.missingExpertise.length > 0 && (
-              <p className="mt-2 rounded-[10px] border border-dashed border-mark-edge bg-mark-tint px-3.5 py-3 text-[13px] text-mark-text">
-                Missing: {room.missingExpertise.join(", ").toLowerCase()}.
+            {runs.length === 0 ? (
+              <p className="text-sm text-muted">
+                No runs yet. Ask the AI on a lead, or copy the case into your own AI and paste back what it found.
               </p>
+            ) : (
+              runs.map((r, i) => (
+                <RunItem key={r.id} caseId={room.id} run={r} members={room.members} demo={demo} viewerId={room.viewer?.id} showLead first={i === 0} />
+              ))
             )}
-            <div className="mt-3">
-              {demo ? <DemoButton>Copy invite link</DemoButton> : <InviteLink caseId={room.id} />}
-            </div>
           </section>
 
-          <section aria-label="Case discussion" className="flex flex-col gap-3">
-            <div id="discussion" className="scroll-mt-6">
-              <h2 className="font-semibold">Discussion</h2>
-              <p className="text-xs text-muted">Everyone on the case can read this. Task questions go in the task.</p>
-            </div>
-            {pinned.map((m) =>
-              m.isAi ? (
-                <div key={m.id} className="flex flex-col gap-1 rounded-[10px] border border-line bg-sheet px-3.5 py-3">
-                  <span className="text-xs font-semibold text-muted">Pinned AI summary</span>
-                  <p className="text-[13px] leading-normal">{m.body}</p>
-                </div>
-              ) : (
-                <MessageItem key={m.id} room={room} msg={m} compact />
-              ),
-            )}
-            {recent.length === 0 && pinned.length === 0 && (
-              <p className="text-sm text-muted">No messages yet. Say hello and share what you&apos;re working on.</p>
-            )}
-            <div className="flex flex-col divide-y divide-line">
-              {recent.map((m) => (
-                <div key={m.id} className="py-3 first:pt-0">
-                  <MessageItem room={room} msg={m} compact />
-                </div>
+          <section aria-label="AI tools for this case">
+            <RailHeading>AI tools for this case</RailHeading>
+            <ul className="flex flex-col">
+              {tools.map((t) => (
+                <li key={t.id}>
+                  <div className="-mx-3 flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-hover">
+                    <span aria-hidden="true" className={`grid h-[34px] w-[34px] flex-none place-items-center rounded-[10px] text-[13px] font-bold ${t.tone}`}>
+                      {t.icon}
+                    </span>
+                    <div className="min-w-0 text-sm">
+                      {t.url ? (
+                        <a href={t.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-ink no-underline hover:text-brand hover:underline">
+                          {t.name}
+                        </a>
+                      ) : (
+                        <b className="font-semibold">{t.name}</b>
+                      )}
+                      <span className="block text-xs text-muted">{t.does}</span>
+                      {t.builtIn && <span className="text-[11px] font-semibold text-ok">Built in</span>}
+                      {t.note && <span className="text-[11px] font-semibold text-mark-text">{t.note}</span>}
+                    </div>
+                  </div>
+                </li>
               ))}
-            </div>
-            <Composer room={room} taskId={null} label="Write to everyone on this case" placeholder="Share an update or ask the group" />
+            </ul>
+            <Link href={`/case/${room.id}/runs#tools`} className="mt-1 inline-block text-[13px] font-semibold">
+              All tools
+            </Link>
           </section>
-
-          <p className="text-xs leading-relaxed text-muted">
-            <strong className="text-ink">Room rules:</strong> every claim needs a source link. Nothing counts until
-            checked. No treatment advice. No asking the family for money. No private messages.
-          </p>
         </aside>
       </div>
     </div>

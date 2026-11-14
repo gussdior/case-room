@@ -45,11 +45,14 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex flex-[1_1_360px] flex-col gap-1.5">
           <nav aria-label="Breadcrumb" className="text-sm text-muted">
-            <Link href={`/case/${room.id}`} className="text-muted no-underline hover:text-ink">The brief</Link>
+            <Link href={`/case/${room.id}`} className="text-muted no-underline hover:text-ink">Leads</Link>
           </nav>
           <h1 className="font-display text-[38px] leading-tight font-medium tracking-[-0.01em]">People on this case</h1>
           <p className="text-sm text-muted">
-            Only the case creator and co-approver see this page. Nobody joins or sees case details until approved.
+            Only the case creator and co-approver see this page. Nobody joins or sees case details until approved.{" "}
+            <Link href={`/case/${room.id}/leaderboard`} className="font-semibold">
+              See the leaderboard
+            </Link>
           </p>
         </div>
         <Badge tone="ok">{demo || isCreator ? "Viewing as the case creator" : "Viewing as co-approver"}</Badge>

@@ -71,3 +71,23 @@ Add your site's `/auth/callback` to Authentication > URL Configuration > Redirec
 - Creators can list a case (`cases.listed`). `listed_cases_for_me()` returns listed cases with open tasks for the caller's expertise. **Alert emails are not sent yet**: that needs a mail sender (Resend) and a scheduled job reading `profiles.alerts_on` and `alert_frequency`.
 - The AI helper (`POST /api/ai/task`) needs `ANTHROPIC_API_KEY` in Vercel. It searches ClinicalTrials.gov, PubMed and bioRxiv/medRxiv, streams its answer as server sent events, and saves the chat to `ai_messages`.
 - `POST /api/ai/check-sources` checks each link before submitting: trial links for current recruitment status, other links for whether they open.
+
+## Leads and AI runs
+
+The case page is now **Leads**: ideas the team is checking (a trial, an existing drug used a new way, a personalized or vaccine approach, a test, access help). Each lead has "what would need to be true", its AI runs, and a status. Ruling a lead out needs a reason and a source, and logs it on What we tried. The brief moved to **For the doctor** (`/case/[id]/doctor`).
+
+- **AI runs** (`ai_runs`): every built in AI answer, plus results people paste from their own AI. Pasted links are checked and names and IDs are scrubbed before saving.
+- **Copy case for your AI**: `GET /api/case/[id]/pack` returns a scrubbed plain text case with rules for any AI.
+- **Suggested leads**: `POST /api/case/[id]/suggest-leads` (case admins). Runs automatically right after a case opens from documents.
+- **Prompts that worked**: `top_prompts(lead)` returns this lead's most reused prompts, then well reused, scrubbed prompts from leads of the same kind in other cases (prompt text only).
+
+### Closing the "fake AI answer" gap: add `SUPABASE_SERVICE_ROLE_KEY`
+
+Without this key, built in AI answers and checked pasted runs are saved through database functions (`save_ai_run`, `save_ai_exchange`) that any member could call directly to plant text labeled as an AI answer or a "sources checked" badge. With the key set in Vercel, the server writes these rows itself. The functions still exist, so after adding the key you can also revoke them:
+
+```sql
+revoke execute on function public.save_ai_run(uuid, uuid, uuid, ai_tool, text, text, text, jsonb, jsonb) from authenticated;
+revoke execute on function public.save_ai_exchange(uuid, text, text, jsonb) from authenticated;
+```
+
+The key bypasses all row level security. Keep it server only: never prefix it with `NEXT_PUBLIC_`.

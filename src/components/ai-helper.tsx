@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { postMessage } from "@/app/case-actions";
+import { onReusePrompt } from "./run-actions";
 import type { Source } from "@/lib/types";
 
 export type AiTurn = { id: string; role: "user" | "assistant"; content: string; sources: Source[]; mine?: boolean };
@@ -102,19 +104,24 @@ function questionIn(text: string): string | null {
 export function AiHelper({
   caseId,
   taskId,
+  leadId,
   taskTitle,
   demo,
   canWrite,
   initial,
 }: {
   caseId: string;
-  taskId: string;
+  /** Either a task or a lead. */
+  taskId?: string;
+  leadId?: string;
   taskTitle: string;
   demo: boolean;
   /** Owner or helper: can drop answers into the work form. */
   canWrite: boolean;
   initial: AiTurn[];
 }) {
+  const onLead = !taskId && !!leadId;
+  const router = useRouter();
   const [turns, setTurns] = useState<AiTurn[]>(initial);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
@@ -123,17 +130,33 @@ export function AiHelper({
   const [toast, setToast] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
+  useEffect(
+    () =>
+      onReusePrompt((p) => {
+        setQ(p);
+        requestAnimationFrame(() => document.getElementById("ai-q")?.focus());
+      }),
+    [],
+  );
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 2500);
     return () => clearTimeout(t);
   }, [toast]);
 
-  const starters = [
-    `What should I look at first for "${taskTitle.length > 70 ? taskTitle.slice(0, 67) + "..." : taskTitle}"?`,
-    "Find open trials or recent papers that match this case",
-    "Turn what we know so far into questions for the doctor",
-  ];
+  const short = taskTitle.length > 70 ? taskTitle.slice(0, 67) + "..." : taskTitle;
+  const starters = onLead
+    ? [
+        "What would make this idea worth asking her doctor about?",
+        "Find trials, papers or preprints on this idea that fit her case",
+        "Has the team already ruled out anything like this?",
+      ]
+    : [
+        `What should I look at first for "${short}"?`,
+        "Find open trials or recent papers that match this case",
+        "Turn what we know so far into questions for the doctor",
+      ];
 
   async function ask(question: string) {
     const text = question.trim();
@@ -154,7 +177,7 @@ export function AiHelper({
       const res = await fetch("/api/ai/task", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ taskId, question: text }),
+        body: JSON.stringify(onLead ? { leadId, question: text } : { taskId, question: text }),
       });
       if (!res.ok || !res.body) {
         const err = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -166,6 +189,7 @@ export function AiHelper({
         );
         return;
       }
+      let saved = false;
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let buf = "";
@@ -187,8 +211,10 @@ export function AiHelper({
           } else if (ev === "status") setStatus(data.text ?? null);
           else if (ev === "sources") patch((a) => ({ ...a, sources: data.sources ?? [] }));
           else if (ev === "error") setNotice(data.error ?? "Something went wrong.");
+          else if (ev === "run" && onLead) saved = true;
         }
       }
+      if (saved) router.refresh();
     } catch {
       setNotice("Lost the connection to the AI helper. Try again.");
     } finally {
@@ -207,7 +233,7 @@ export function AiHelper({
     const fd = new FormData();
     fd.set("body", body.slice(0, 4000));
     if (sources[0]) fd.set("source", sources[0].url);
-    const r = await postMessage(caseId, toTask ? taskId : null, undefined, fd);
+    const r = await postMessage(caseId, toTask && taskId ? taskId : null, undefined, fd);
     if (r?.error) setNotice(r.error);
     else setToast(done);
   }
@@ -251,7 +277,7 @@ export function AiHelper({
               <SourceChips sources={t.sources} />
               {!(busy && i === turns.length - 1) && t.content && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {canWrite && (
+                  {canWrite && !onLead && (
                     <button
                       type="button"
                       className="btn btn-mark"
@@ -272,12 +298,19 @@ export function AiHelper({
                       post(`Question for the doctor: ${question}`, false, t.sources, "Posted to the case for the questions list.");
                     }}
                   >
-                    Add question to the brief
+                    Add question for the doctor
                   </button>
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => post(`From the AI helper:\n${t.content.replace(CITE, "").trim()}`, true, t.sources, "Shared in the task discussion.")}
+                    onClick={() =>
+                      post(
+                        `From the AI helper${onLead ? ` on "${short}"` : ""}:\n${t.content.replace(CITE, "").trim()}`,
+                        !onLead,
+                        t.sources,
+                        onLead ? "Shared in the case discussion." : "Shared in the task discussion.",
+                      )
+                    }
                   >
                     Share in discussion
                   </button>
@@ -314,14 +347,14 @@ export function AiHelper({
         className="flex items-center gap-2 rounded-xl border border-line-2 py-1.5 pr-1.5 pl-3.5 transition-[border-color,box-shadow] focus-within:border-brand focus-within:shadow-[0_0_0_3px_#d9def5]"
       >
         <label htmlFor="ai-q" className="sr-only">
-          Ask AI about this task
+          {onLead ? "Ask AI about this lead" : "Ask AI about this task"}
         </label>
         <input
           id="ai-q"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           maxLength={4000}
-          placeholder="Ask about this task"
+          placeholder={onLead ? "Ask about this lead" : "Ask about this task"}
           className="min-h-10 flex-1 bg-transparent text-[15px] outline-none"
           autoComplete="off"
         />
@@ -330,8 +363,9 @@ export function AiHelper({
         </button>
       </form>
       <p className="text-[13px] text-muted">
-        The AI helps you research. It does not give treatment advice, and every answer shows its sources. Everyone on the
-        case can read this chat. Never type names or ID numbers.
+        The AI helps you research. It does not give treatment advice, and every answer shows its sources.{" "}
+        {onLead ? "Answers are saved as AI runs everyone on the case can see." : "Everyone on the case can read this chat."} Never type names or ID
+        numbers.
       </p>
     </div>
   );
