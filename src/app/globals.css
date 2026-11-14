@@ -1,26 +1,50 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/space-grotesk";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-display: "Space Grotesk Variable", "Inter Variable", sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: #151a22;
+  --color-ink-2: #2a313c;
+  --color-muted: #3d4654;
+  --color-subtle: #5a6473;
+  --color-line: #dde2ea;
+  --color-line-2: #c9d1dc;
+  --color-canvas: #e9edf2;
+  --color-soft: #f4f6f9;
+  --color-brand: #1f5fad;
+  --color-brand-dark: #143f75;
+  --color-brand-soft: #eaf0f8;
+  --color-brand-tint: #f6f9fd;
+  --color-ok: #1e6b3f;
+  --color-ok-soft: #e6f4ec;
+  --color-ok-line: #b9dec8;
+  --color-warn: #8a4b00;
+  --color-warn-text: #7a4200;
+  --color-warn-soft: #fff3e0;
+  --color-warn-tint: #fff8ec;
+  --color-bad: #9b2c2c;
+  --color-bad-soft: #fdecec;
+  --color-bad-tint: #fdf3f3;
+  --color-bad-line: #f3c9c9;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+a {
+  color: var(--color-brand);
+}
+a:hover {
+  color: var(--color-brand-dark);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
 }
