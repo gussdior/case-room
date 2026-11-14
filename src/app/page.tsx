@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Logo } from "@/components/logo";
+import { AppHeader } from "@/components/app-header";
 import { btn } from "@/components/ui";
 
 const STEPS = [
@@ -9,14 +9,10 @@ const STEPS = [
   { title: "Questions, not advice", body: "The result is a brief of questions and options for the patient's own doctor." },
 ];
 
-export default function Home() {
+export default async function Home() {
   return (
     <>
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex max-w-[1136px] items-center px-4 py-3.5 sm:px-8">
-          <Logo />
-        </div>
-      </header>
+      <AppHeader />
       <main className="mx-auto flex w-full max-w-[1136px] flex-1 flex-col gap-10 px-4 py-12 sm:px-8">
         <section className="flex max-w-3xl flex-col gap-5">
           <h1 className="font-display text-4xl leading-tight font-bold sm:text-5xl">
@@ -27,8 +23,11 @@ export default function Home() {
             progress and what is stuck.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/case/sample" className={btn.primary}>
-              Open the sample case
+            <Link href="/new" className={btn.primary}>
+              Start a case
+            </Link>
+            <Link href="/case/sample" className={btn.secondary}>
+              See a sample case
             </Link>
           </div>
         </section>

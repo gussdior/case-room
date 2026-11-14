@@ -1,14 +1,21 @@
 import "server-only";
+import { cache } from "react";
+import { requireViewer } from "./auth";
+import { loadCase, type Teaser } from "./db-case";
 import { SAMPLE_CASE } from "./sample-case";
 import type { CaseRoom, Member, Task } from "./types";
 
-// For now every page reads the made up sample case.
-// Once Supabase is connected, these functions read from the database instead
-// and the pages stay the same.
-export async function getCaseRoom(id: string): Promise<CaseRoom | null> {
-  if (id === SAMPLE_CASE.id) return SAMPLE_CASE;
-  return null;
-}
+export type Loaded = { room: CaseRoom; teaser?: never } | { teaser: Teaser; room?: never } | null;
+
+/** The public sample case needs no sign in. Real cases need a signed in user with a profile. */
+export const getRoom = cache(async (id: string): Promise<Loaded> => {
+  if (id === SAMPLE_CASE.id) return { room: SAMPLE_CASE };
+  await requireViewer(`/case/${id}`);
+  const r = await loadCase(id);
+  if (!r) return null;
+  if ("kind" in r) return { teaser: r };
+  return { room: r };
+});
 
 export function memberById(room: CaseRoom, id?: string): Member | undefined {
   return id ? room.members.find((m) => m.id === id) : undefined;
@@ -56,18 +63,23 @@ export type LeaderRow = {
   points: number;
 };
 
-/** Same rule as the database: 3 per checked task you own, 2 per check you did for someone else. */
+/** Same rule as the database: 3 per piece of your work that passed a check, 2 per check you did for someone else. */
 export function leaderboard(room: CaseRoom): LeaderRow[] {
+  const subs = room.tasks.flatMap((t) => t.submissions);
   return approvedMembers(room)
     .filter((m) => m.role !== "family")
     .map((member) => {
-      const tasksChecked = room.tasks.filter(
-        (t) => t.status === "checked" && t.ownerId === member.id,
-      ).length;
-      const reviewsDone = room.tasks
-        .flatMap((t) => t.submissions)
-        .filter((s) => s.authorId !== member.id && s.checkedBy?.includes(member.id)).length;
+      const tasksChecked = subs.filter((s) => s.authorId === member.id && (s.checkedBy?.length ?? 0) > 0).length;
+      const reviewsDone = subs.filter((s) => s.authorId !== member.id && s.checkedBy?.includes(member.id)).length;
       return { member, tasksChecked, reviewsDone, points: tasksChecked * 3 + reviewsDone * 2 };
     })
     .sort((a, b) => b.points - a.points || a.member.name.localeCompare(b.member.name));
+}
+
+/** Can this viewer check this submission? Mirrors the database rule, to show the right button. */
+export function canCheck(room: CaseRoom, task: Task, authorId: string): boolean {
+  const v = room.viewer;
+  if (!v || task.status !== "submitted") return false;
+  if (v.id === authorId || v.id === task.ownerId) return false;
+  return v.expertise === task.expertise || v.expertise === "doctor_nurse";
 }

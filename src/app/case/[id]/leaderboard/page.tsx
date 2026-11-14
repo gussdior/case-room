@@ -1,19 +1,41 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { briefProgress, getCaseRoom, leaderboard } from "@/lib/data";
+import { notFound, redirect } from "next/navigation";
+import { loadLeaderboard } from "@/lib/db-case";
+import { briefProgress, getRoom, leaderboard, memberById } from "@/lib/data";
 
 export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/leaderboard">) {
   const { id } = await params;
-  const room = await getCaseRoom(id);
-  if (!room) notFound();
+  const loaded = await getRoom(id);
+  if (!loaded) notFound();
+  if (loaded.teaser) redirect(`/case/${id}`);
+  const room = loaded.room;
 
-  const rows = leaderboard(room);
+  // The sample case is computed here; real cases use the database's own scoring.
+  const rows =
+    room.viewer === null
+      ? leaderboard(room).map((r) => ({
+          id: r.member.id,
+          name: r.member.name,
+          headline: r.member.headline,
+          tasksChecked: r.tasksChecked,
+          reviewsDone: r.reviewsDone,
+          points: r.points,
+        }))
+      : (await loadLeaderboard(room.id)).map((r) => ({
+          id: r.user_id,
+          name: r.display_name,
+          headline: r.headline ?? "",
+          tasksChecked: r.tasks_checked,
+          reviewsDone: r.reviews_done,
+          points: r.points,
+        }));
+
   const tasksChecked = rows.reduce((n, r) => n + r.tasksChecked, 0);
   const reviews = rows.reduce((n, r) => n + r.reviewsDone, 0);
   const stats = [
-    { value: tasksChecked, label: "Tasks checked" },
+    { value: tasksChecked, label: "Pieces of work checked" },
     { value: reviews, label: "Reviews done for others" },
-    { value: rows.length, label: "Volunteers" },
+    { value: rows.length, label: "People on the case" },
   ];
 
   return (
@@ -24,7 +46,8 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
         </nav>
         <h1 className="font-display text-[28px] font-bold">Contributions leaderboard</h1>
         <p className="text-sm text-subtle">
-          Points only for checked work: 3 per checked task, 2 per check you do for someone else.
+          Points only for checked work: 3 for each piece of your work that passes a check, 2 for each check you do for
+          someone else.
         </p>
       </div>
 
@@ -43,13 +66,13 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
 
       <div className="overflow-x-auto rounded-2xl border border-line bg-white px-4 py-2 sm:px-6">
         <table className="w-full min-w-[640px] border-collapse text-sm">
-          <caption className="sr-only">Volunteers ranked by points</caption>
+          <caption className="sr-only">People ranked by points</caption>
           <thead>
             <tr className="text-left text-xs text-subtle">
               <th scope="col" className="px-2 py-3.5 font-semibold">Rank</th>
-              <th scope="col" className="px-2 py-3.5 font-semibold">Volunteer</th>
+              <th scope="col" className="px-2 py-3.5 font-semibold">Name</th>
               <th scope="col" className="px-2 py-3.5 font-semibold">About</th>
-              <th scope="col" className="px-2 py-3.5 text-right font-semibold">Tasks checked</th>
+              <th scope="col" className="px-2 py-3.5 text-right font-semibold">Work checked</th>
               <th scope="col" className="px-2 py-3.5 text-right font-semibold">Reviews done</th>
               <th scope="col" className="px-2 py-3.5 text-right font-semibold">Points</th>
             </tr>
@@ -57,20 +80,23 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
           <tbody>
             {rows.map((r, i) => {
               const inProgress = room.tasks.filter(
-                (t) => t.ownerId === r.member.id && ["taken", "stuck", "submitted"].includes(t.status),
+                (t) => t.ownerId === r.id && ["taken", "stuck", "submitted"].includes(t.status),
               ).length;
+              const top = i === 0 && r.points > 0;
+              const isYou = r.id === room.viewer?.id;
               return (
-                <tr key={r.member.id} className={`border-t border-[#ebeef3] ${i === 0 && r.points > 0 ? "bg-[#fff9ee]" : ""}`}>
-                  <td className={`px-2 py-3.5 font-bold ${i === 0 && r.points > 0 ? "text-warn" : ""}`}>{i + 1}</td>
-                  <td className="px-2 py-3.5 font-semibold">{r.member.name}</td>
-                  <td className="px-2 py-3.5 text-muted">{r.member.headline}</td>
+                <tr key={r.id} className={`border-t border-[#ebeef3] ${top ? "bg-[#fff9ee]" : ""}`}>
+                  <td className={`px-2 py-3.5 font-bold ${top ? "text-warn" : ""}`}>{i + 1}</td>
+                  <td className="px-2 py-3.5 font-semibold">
+                    {r.name}
+                    {isYou && <span className="font-normal text-subtle"> (you)</span>}
+                  </td>
+                  <td className="px-2 py-3.5 text-muted">{r.headline || memberById(room, r.id)?.headline}</td>
                   <td className="px-2 py-3.5 text-right">{r.tasksChecked}</td>
                   <td className="px-2 py-3.5 text-right">{r.reviewsDone}</td>
                   <td className="px-2 py-3.5 text-right font-bold">
                     {r.points}
-                    {inProgress > 0 && (
-                      <span className="text-xs font-normal text-subtle"> · {inProgress} in progress</span>
-                    )}
+                    {inProgress > 0 && <span className="text-xs font-normal text-subtle"> · {inProgress} in progress</span>}
                   </td>
                 </tr>
               );

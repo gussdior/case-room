@@ -1,19 +1,44 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { decideRequest, removeMember, setCoApprover, updateCaseSettings } from "@/app/case-actions";
 import { DemoButton } from "@/components/demo-button";
+import { ActionButton, ActionForm, SubmitButton, inputClass, labelClass } from "@/components/forms";
 import { Avatar, Badge, Card } from "@/components/ui";
-import { approvedMembers, getCaseRoom, leaderboard, memberById, pendingRequests } from "@/lib/data";
-import { EXPERTISE_LABEL } from "@/lib/types";
+import { approvedMembers, getRoom, leaderboard, memberById, pendingRequests } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
+import { timeAgo } from "@/lib/time";
+import { EXPERTISE_LABEL, type CaseRoom } from "@/lib/types";
+
+async function loadReports(room: CaseRoom) {
+  if (!room.viewer?.isAdmin) return [];
+  const supabase = await createClient();
+  const ids = room.messages.map((m) => m.id);
+  if (ids.length === 0) return [];
+  const { data } = await supabase
+    .from("reports")
+    .select("id, message_id, reason, status, created_at")
+    .in("message_id", ids)
+    .eq("status", "open")
+    .order("created_at", { ascending: false });
+  return (data ?? []).map((r) => ({ ...r, message: room.messages.find((m) => m.id === r.message_id) }));
+}
 
 export default async function PeoplePage({ params }: PageProps<"/case/[id]/people">) {
   const { id } = await params;
-  const room = await getCaseRoom(id);
-  if (!room) notFound();
+  const loaded = await getRoom(id);
+  if (!loaded) notFound();
+  if (loaded.teaser) redirect(`/case/${id}`);
+  const room = loaded.room;
+  const demo = room.viewer === null;
+  if (!demo && !room.viewer?.isAdmin) redirect(`/case/${id}`);
+  const isCreator = room.viewer?.role === "creator";
 
   const pending = pendingRequests(room);
   const approved = approvedMembers(room);
   const stats = new Map(leaderboard(room).map((r) => [r.member.id, r]));
   const coApprover = memberById(room, room.coApproverId);
+  const reports = await loadReports(room);
+  const volunteers = approved.filter((m) => m.role !== "creator");
 
   return (
     <div className="mx-auto flex max-w-[1136px] flex-col gap-5">
@@ -27,7 +52,7 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
             Only the case creator and co-approver see this page. Nobody joins or sees case details until approved.
           </p>
         </div>
-        <Badge tone="ok">Viewing as the case creator</Badge>
+        <Badge tone="ok">{demo || isCreator ? "Viewing as the case creator" : "Viewing as co-approver"}</Badge>
       </div>
 
       <div className="flex flex-wrap items-start gap-5">
@@ -50,53 +75,98 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
                   <div className="flex-[1_1_200px]">
                     <div className="font-semibold">{m.name}</div>
                     <div className="text-[13px] text-subtle">
-                      {m.headline} · {EXPERTISE_LABEL[m.expertise]}
+                      {m.headline ? `${m.headline} · ` : ""}
+                      {EXPERTISE_LABEL[m.expertise]}
                       {m.hoursPerWeek ? ` · ${m.hoursPerWeek} h/week` : ""} · asked {m.requestedAt}
                     </div>
                   </div>
-                  {m.proofChecked ? (
-                    <Badge tone="ok">{m.expertise === "doctor_nurse" ? "License checked" : "Profile link checked"}</Badge>
+                  {demo ? (
+                    m.proofChecked ? (
+                      <Badge tone="ok">{m.expertise === "doctor_nurse" ? "License checked" : "Profile link checked"}</Badge>
+                    ) : (
+                      <Badge tone="bad">Nothing to check</Badge>
+                    )
+                  ) : m.proofUrl ? (
+                    <a href={m.proofUrl} target="_blank" rel="noopener noreferrer nofollow" className="text-xs font-semibold">
+                      Open their proof link
+                    </a>
                   ) : (
-                    <Badge tone="bad">Nothing to check</Badge>
+                    <Badge tone="warn">No proof link</Badge>
                   )}
                 </div>
-                <p className="text-sm leading-normal">&ldquo;{m.requestNote}&rdquo;</p>
+                {m.requestNote && <p className="whitespace-pre-line text-sm leading-normal">&ldquo;{m.requestNote}&rdquo;</p>}
                 {m.aiNote && (
-                  <div
-                    className={`rounded-lg px-2.5 py-2 text-xs leading-snug ${
-                      m.aiFlag ? "bg-warn-soft text-warn-text" : "bg-soft text-muted"
-                    }`}
-                  >
+                  <div className={`rounded-lg px-2.5 py-2 text-xs leading-snug ${m.aiFlag ? "bg-warn-soft text-warn-text" : "bg-soft text-muted"}`}>
                     AI note: {m.aiNote}
                   </div>
                 )}
+                {!demo && m.expertise === "doctor_nurse" && (
+                  <p className="text-xs text-muted">
+                    Says they&apos;re a doctor or nurse. Open their link and check it before approving. Their checks carry the
+                    most weight.
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-2">
-                  <DemoButton variant={m.aiFlag ? "secondary" : "primary"}>Approve</DemoButton>
-                  <DemoButton variant={m.aiFlag ? "danger" : "secondary"}>Decline</DemoButton>
-                  <DemoButton>Ask a question first</DemoButton>
+                  {demo ? (
+                    <>
+                      <DemoButton variant={m.aiFlag ? "secondary" : "primary"}>Approve</DemoButton>
+                      <DemoButton variant={m.aiFlag ? "danger" : "secondary"}>Decline</DemoButton>
+                      <DemoButton>Ask a question first</DemoButton>
+                    </>
+                  ) : (
+                    <>
+                      <ActionButton action={decideRequest.bind(null, room.id, m.id, true)} variant="primary">
+                        Approve
+                      </ActionButton>
+                      <ActionButton action={decideRequest.bind(null, room.id, m.id, false)}>Decline</ActionButton>
+                    </>
+                  )}
                 </div>
               </article>
             ))}
           </Card>
 
+          {!demo && reports.length > 0 && (
+            <Card label="Reported messages" className="flex flex-col gap-3 border-2 border-bad-line">
+              <h2 className="text-lg font-bold">Reported messages</h2>
+              {reports.map((r) => {
+                const author = memberById(room, r.message?.authorId);
+                return (
+                  <div key={r.id} className="flex flex-col gap-1.5 rounded-xl bg-bad-tint p-3 text-sm">
+                    <span className="text-xs text-bad">
+                      Reported {timeAgo(r.created_at)}: {r.reason}
+                    </span>
+                    <span>
+                      <strong>{author?.name ?? "Unknown"}:</strong> {r.message?.body}
+                    </span>
+                    {author && author.role !== "creator" && (
+                      <ActionButton action={removeMember.bind(null, room.id, author.id)}>Remove {author.name} from the case</ActionButton>
+                    )}
+                  </div>
+                );
+              })}
+            </Card>
+          )}
+
           <Card label="Approved volunteers" className="flex flex-col">
             <h2 className="mb-2 text-lg font-bold">Approved · {approved.length}</h2>
             {approved.map((m) => {
               const s = stats.get(m.id);
-              const working = room.tasks.filter(
-                (t) => t.ownerId === m.id && (t.status === "taken" || t.status === "stuck"),
-              ).length;
+              const working = room.tasks.filter((t) => t.ownerId === m.id && (t.status === "taken" || t.status === "stuck")).length;
               return (
                 <div key={m.id} className="flex flex-wrap items-center gap-2.5 border-t border-[#ebeef3] py-2.5 text-sm">
                   <span className="flex-[1_1_220px]">
-                    <strong>{m.name}</strong> · {m.headline}
+                    <strong>{m.name}</strong>
+                    {m.headline ? ` · ${m.headline}` : ""}
                     {m.role === "creator" && " · creator"}
                     {m.role === "co_approver" && " · co-approver"}
                   </span>
                   <span className="text-xs text-subtle">
                     {s?.tasksChecked ?? 0} checked{working ? ` · ${working} in progress` : ""}
                   </span>
-                  {m.role !== "creator" && <DemoButton>Remove</DemoButton>}
+                  {m.role !== "creator" &&
+                    m.id !== room.viewer?.id &&
+                    (demo ? <DemoButton>Remove</DemoButton> : <ActionButton action={removeMember.bind(null, room.id, m.id)}>Remove</ActionButton>)}
                 </div>
               );
             })}
@@ -104,47 +174,75 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
         </div>
 
         <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-5">
-          <Card label="Who can join" className="flex flex-col gap-3">
-            <h2 className="text-lg font-bold">Who can join</h2>
-            <label className="flex min-h-11 items-start gap-2.5 text-sm leading-snug">
-              <input type="radio" name="join" defaultChecked={room.joinMode === "approve"} className="mt-1" />
-              <span>
-                <strong>I approve each person</strong>
-                <br />
-                <span className="text-xs text-subtle">Recommended</span>
-              </span>
-            </label>
-            <label className="flex min-h-11 items-start gap-2.5 text-sm leading-snug">
-              <input type="radio" name="join" defaultChecked={room.joinMode === "invite_only"} className="mt-1" />
-              <span>
-                <strong>Invite only</strong>
-                <br />
-                <span className="text-xs text-subtle">No requests, only people I invite by link</span>
-              </span>
-            </label>
-            <div className="text-[13px] text-muted">
-              Co-approver: <strong>{coApprover?.name ?? "none"}</strong>
-            </div>
-          </Card>
+          {demo ? (
+            <Card label="Who can join" className="flex flex-col gap-3">
+              <h2 className="text-lg font-bold">Who can join</h2>
+              <p className="text-sm">
+                <strong>I approve each person</strong> (recommended) or <strong>Invite only</strong>.
+              </p>
+              <div className="text-[13px] text-muted">
+                Co-approver: <strong>{coApprover?.name ?? "none"}</strong>
+              </div>
+            </Card>
+          ) : (
+            <Card label="Case settings" className="flex flex-col gap-3">
+              <h2 className="text-lg font-bold">Case settings</h2>
+              <ActionForm action={updateCaseSettings.bind(null, room.id)} className="flex flex-col gap-3" resetOnSuccess={false}>
+                <label htmlFor="s-goal" className={labelClass}>
+                  Goal
+                </label>
+                <input id="s-goal" name="goal" required maxLength={200} defaultValue={room.goal} className={inputClass} />
+                <label htmlFor="s-summary" className={labelClass}>
+                  Case summary (no names or ID numbers)
+                </label>
+                <textarea id="s-summary" name="summary" rows={5} maxLength={4000} defaultValue={room.summary} className={`${inputClass} resize-y`} />
+                <label htmlFor="s-visit" className={labelClass}>
+                  Next doctor visit
+                </label>
+                <input id="s-visit" name="visit" type="date" defaultValue={room.visitDate ?? ""} className={inputClass} />
+                <fieldset className="flex flex-col gap-1">
+                  <legend className={`${labelClass} mb-1`}>Who can join</legend>
+                  <label className="flex min-h-11 items-center gap-2.5 text-sm">
+                    <input type="radio" name="join_mode" value="approve" defaultChecked={room.joinMode === "approve"} />I approve
+                    each person (recommended)
+                  </label>
+                  <label className="flex min-h-11 items-center gap-2.5 text-sm">
+                    <input type="radio" name="join_mode" value="invite_only" defaultChecked={room.joinMode === "invite_only"} />
+                    Closed: no new requests
+                  </label>
+                </fieldset>
+                <SubmitButton className="self-start">Save settings</SubmitButton>
+              </ActionForm>
+            </Card>
+          )}
 
-          <section aria-label="What a volunteer sees" className="flex flex-col gap-3 rounded-2xl bg-ink px-6 py-5 text-white">
-            <span className="text-xs font-bold uppercase tracking-widest text-line-2">What a volunteer sees</span>
-            <h2 className="font-display text-xl font-bold">Ask to join this case</h2>
-            <p className="text-[13px] leading-normal text-line-2">
-              Before approval they see only the goal and which skills are needed. No case details.
-            </p>
-            <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm leading-snug">
-              <li>Pick your expertise</li>
-              <li>Say how you can help, in 2 sentences</li>
-              <li>Add a link that shows who you are (required for doctors and nurses)</li>
-              <li>Hours per week you can give</li>
-              <li>Agree to the room rules</li>
-            </ol>
-          </section>
+          {!demo && isCreator && (
+            <Card label="Co-approver" className="flex flex-col gap-3">
+              <h2 className="text-lg font-bold">Co-approver</h2>
+              <p className="text-sm text-muted">A trusted volunteer who can approve requests and manage the case with you.</p>
+              <ActionForm action={setCoApprover.bind(null, room.id)} className="flex flex-col gap-2" resetOnSuccess={false}>
+                <label htmlFor="co" className={labelClass}>
+                  Co-approver
+                </label>
+                <select id="co" name="user" defaultValue={room.coApproverId ?? ""} className={inputClass}>
+                  <option value="">None</option>
+                  {volunteers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+                <SubmitButton variant="secondary" className="self-start">
+                  Save
+                </SubmitButton>
+              </ActionForm>
+            </Card>
+          )}
 
           <section aria-label="Declining" className="rounded-2xl bg-line px-5 py-4 text-xs leading-relaxed text-ink-2">
-            <strong className="text-ink">When you decline:</strong> the person gets a polite standard note with no reason
-            given, and can&apos;t request again for this case. Removing someone keeps their checked work in the brief.
+            <strong className="text-ink">When you decline:</strong> the person sees a polite note with no reason given, and
+            can&apos;t request again for this case. Removing someone keeps their checked work in the brief and opens their
+            unfinished tasks for others.
           </section>
         </div>
       </div>

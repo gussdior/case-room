@@ -3,15 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export function CaseNav({ caseId, pendingCount }: { caseId: string; pendingCount: number }) {
+export function CaseNav({
+  caseId,
+  pendingCount,
+  showPeople,
+}: {
+  caseId: string;
+  pendingCount: number;
+  showPeople: boolean;
+}) {
   const pathname = usePathname();
   const base = `/case/${caseId}`;
   const links = [
     { href: base, label: "Brief", exact: true },
     { href: `${base}#discussion`, label: "Discussion", exact: true, anchor: true },
-    { href: `${base}/people`, label: "People", badge: pendingCount },
+    ...(showPeople ? [{ href: `${base}/people`, label: "People", badge: pendingCount }] : []),
     { href: `${base}/leaderboard`, label: "Leaderboard" },
-  ];
+  ] as { href: string; label: string; exact?: boolean; anchor?: boolean; badge?: number }[];
   return (
     <nav aria-label="Case" className="flex flex-wrap gap-1">
       {links.map((l) => {

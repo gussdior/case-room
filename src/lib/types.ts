@@ -42,6 +42,7 @@ export type Member = Person & {
   aiNote?: string;
   aiFlag?: boolean;
   requestedAt?: string;
+  proofUrl?: string | null;
 };
 
 export type Submission = {
@@ -51,6 +52,7 @@ export type Submission = {
   sources: string[];
   aiCheck?: { claims: number; matched: number; note: string };
   checkedBy?: string[]; // person ids, "ai" for the AI
+  fixRequests?: { by: string; note: string }[];
   createdAt: string;
 };
 
@@ -94,15 +96,25 @@ export type Message = {
   createdAt: string;
 };
 
+export type ViewerContext = {
+  id: string;
+  expertise: Expertise;
+  role: MemberRole;
+  isAdmin: boolean;
+};
+
 export type CaseRoom = {
   id: string;
+  viewer: ViewerContext | null; // null = public sample, nothing can be changed
   goal: string;
   summary: string;
   facts: { label: string; value: string }[];
-  visitInDays: number;
+  visitInDays: number | null;
+  visitDate?: string | null;
   isSample: boolean;
   joinMode: "approve" | "invite_only";
   coApproverId?: string;
+  creatorId?: string;
   sections: Section[];
   tasks: Task[];
   members: Member[];

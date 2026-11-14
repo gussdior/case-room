@@ -3,6 +3,7 @@ import type { CaseRoom } from "./types";
 // A made up case. No real person's data.
 export const SAMPLE_CASE: CaseRoom = {
   id: "sample",
+  viewer: null,
   goal: "Find the best next treatment options to discuss with the oncologist",
   summary:
     "A 58 year old woman with stage IV lung adenocarcinoma that has spread to the bones. Her tumor has an EGFR exon 19 deletion. Osimertinib worked for 22 months, but the latest scan shows growth. She is active and walks daily. Shared with consent, name and ID numbers removed.",
