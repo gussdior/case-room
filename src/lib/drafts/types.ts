@@ -125,6 +125,13 @@ export type DraftAnswers = {
   consent?: boolean;
   no_ids?: boolean;
   wants_to_know?: string;
+  /** Case title chosen by the family, a plain sentence. */
+  goal?: string;
+  /** What the AI suggested from the documents, for the family to confirm. */
+  suggested_goal?: string;
+  cancer_stage?: string;
+  age_range?: string;
+  current_treatment?: string;
 };
 
 export type Draft = {

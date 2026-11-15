@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getUserId, getViewer } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { UUID_RE } from "@/lib/time";
-import { EXPERTISE_ORDER, type Expertise } from "@/lib/types";
+import { AGE_RANGES, EXPERTISE_ORDER, type AgeRange, type Expertise } from "@/lib/types";
 
 // Every action here is also enforced by the database's access rules.
 // The checks in this file only give clearer messages.
@@ -91,7 +91,7 @@ export async function createCase(_: Result, form: FormData): Promise<Result> {
   const consent = form.get("consent") === "on";
   const noIds = form.get("no_ids") === "on";
 
-  if (!goal) return { error: "Add a goal." };
+  if (goal.length < 10) return { error: "Write the goal of this case as a plain sentence of at least 10 characters." };
   if (!consent) return { error: "You need the patient's consent (or their legal representative's) to share this case." };
   if (!noIds) return { error: "Confirm the summary has no names, ID numbers, addresses or dates of birth." };
   if (visit && !/^\d{4}-\d{2}-\d{2}$/.test(visit)) return { error: "Pick the visit date from the calendar." };
@@ -104,8 +104,23 @@ export async function createCase(_: Result, form: FormData): Promise<Result> {
     p_visit: visit,
   });
   if (error || !data) return friendly(error) ?? { error: "Couldn't create the case." };
+  const age = text(form, "age_range", 20);
+  const current = text(form, "current_treatment", 80);
+  const cancerType = text(form, "cancer_type", 60);
+  const stage = text(form, "cancer_stage", 40);
+  if (age || current || cancerType || stage) {
+    await supabase.rpc("set_case_facts", {
+      c: data,
+      p_goal: null,
+      p_age_range: AGE_RANGES.includes(age as AgeRange) ? age : null,
+      p_current_treatment: current || null,
+      p_cancer_type: cancerType || null,
+      p_cancer_stage: stage || null,
+    });
+  }
   revalidatePath("/cases");
-  redirect(`/case/${data}`);
+  // ?new=1 asks the AI to suggest leads and draft the brief right away.
+  redirect(`/case/${data}?new=1`);
 }
 
 export async function updateCaseSettings(caseId: string, _: Result, form: FormData): Promise<Result> {
@@ -115,7 +130,7 @@ export async function updateCaseSettings(caseId: string, _: Result, form: FormDa
   const summary = text(form, "summary", 4000);
   const visit = text(form, "visit", 10) || null;
   const joinMode = form.get("join_mode") === "invite_only" ? "invite_only" : "approve";
-  if (!goal) return { error: "Add a goal." };
+  if (goal.length < 10) return { error: "Write the goal as a plain sentence of at least 10 characters." };
   if (form.has("listed_present") && form.get("listed") === "on") {
     const pg = text(form, "public_goal", 140);
     if (pg.length < 10) return { error: "Write a one line public goal of at least 10 characters before listing the case." };
@@ -144,6 +159,16 @@ export async function updateCaseSettings(caseId: string, _: Result, form: FormDa
       : { c: caseId, p_goal: goal, p_summary: summary, p_visit: visit, p_join_mode: joinMode },
   );
   if (error) return friendly(error);
+  if (form.has("facts_present")) {
+    const age = text(form, "age_range", 20);
+    const { error: factsError } = await supabase.rpc("set_case_facts", {
+      c: caseId,
+      p_goal: null,
+      p_age_range: AGE_RANGES.includes(age as AgeRange) ? age : null,
+      p_current_treatment: text(form, "current_treatment", 80) || null,
+    });
+    if (factsError) return friendly(factsError);
+  }
   refresh(caseId);
   if (withListing && form.get("listed") === "on" && form.get("had_preview") !== "1")
     return { ok: "Saved. Listing the case also turned on the public preview." };

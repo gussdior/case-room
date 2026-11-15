@@ -41,26 +41,29 @@ function toRun(r: RunRow): AiRun {
   };
 }
 
-const ORDER: Record<LeadStatus, number> = { promising: 0, exploring: 1, needs_someone: 2, ruled_out: 3 };
+/** Leads that need someone come first, so a visitor sees where to help. */
+const ORDER: Record<LeadStatus, number> = { needs_someone: 0, exploring: 1, promising: 2, ruled_out: 3 };
 
 /** Leads for a case, with run counts, checked sources and who has worked on each. */
 export async function loadLeads(caseId: string): Promise<Lead[]> {
-  if (caseId === SAMPLE_CASE.id) return SAMPLE_LEADS;
+  if (caseId === SAMPLE_CASE.id) return [...SAMPLE_LEADS].sort((a, b) => ORDER[a.status] - ORDER[b.status]);
   if (!UUID_RE.test(caseId)) return [];
   const supabase = await createClient();
-  const [{ data: leads }, { data: runs }, { data: tasks }] = await Promise.all([
+  const [{ data: leads }, { data: runs }, { data: tasks }, { data: takers }] = await Promise.all([
     supabase
       .from("leads")
       .select("id, title, idea, kind, status, conditions, next_step, next_step_expertise, ai_suggested, ruled_out_reason, created_by, updated_at")
       .eq("case_id", caseId),
     supabase.from("ai_runs").select("lead_id, user_id, source_check").eq("case_id", caseId).not("lead_id", "is", null).limit(2000),
     supabase.from("tasks").select("lead_id, owner_id").eq("case_id", caseId).not("lead_id", "is", null),
+    supabase.from("lead_members").select("lead_id, user_id, leads!inner(case_id)").eq("leads.case_id", caseId),
   ]);
   return (leads ?? [])
     .map((l) => {
       const mine = (runs ?? []).filter((r) => r.lead_id === l.id);
       const people = [
         ...new Set([
+          ...(takers ?? []).filter((t) => t.lead_id === l.id).map((t) => t.user_id as string),
           ...mine.map((r) => r.user_id),
           ...(tasks ?? []).filter((t) => t.lead_id === l.id && t.owner_id).map((t) => t.owner_id as string),
         ]),

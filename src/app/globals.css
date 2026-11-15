@@ -98,6 +98,10 @@
     cursor: not-allowed;
     box-shadow: none;
   }
+  .btn-sm {
+    padding: 0 14px;
+    font-size: 13px;
+  }
   .btn-primary {
     background: var(--color-brand);
     color: #fff;

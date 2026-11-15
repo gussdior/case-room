@@ -38,9 +38,8 @@ export function CaseNav({
           >
             {l.label}
             {l.badge ? (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-mark px-1.5 text-[11px] font-bold text-ink">
-                {l.badge}
-                <span className="sr-only"> waiting</span>
+              <span className="flex h-5 items-center justify-center rounded-full bg-mark px-2 text-[11px] font-semibold whitespace-nowrap text-ink">
+                {l.badge} waiting to join
               </span>
             ) : null}
           </Link>

@@ -4,7 +4,6 @@ import type { Teaser } from "@/lib/db-case";
 import { JoinAction } from "./join-panel";
 import { Badge, ExpertiseBadge } from "./ui";
 
-const SAFETY = "Everything here becomes questions for the patient's doctor. It is not treatment advice.";
 
 /** What a shared link shows before the family approves someone. */
 export function CasePreview({ teaser, viewer }: { teaser: Teaser; viewer: Viewer | null }) {
@@ -60,7 +59,6 @@ export function CasePreview({ teaser, viewer }: { teaser: Teaser; viewer: Viewer
       {viewer ? (
         <aside aria-label="Ask to join" className="flex flex-col gap-4 lg:sticky lg:top-5">
           <JoinAction teaser={teaser} viewer={viewer} />
-          <p className="text-xs text-muted">{SAFETY}</p>
         </aside>
       ) : (
         <aside aria-label="Ask to join" className="flex flex-col gap-3 rounded-[14px] bg-ink p-6 text-white lg:sticky lg:top-5">
@@ -74,7 +72,6 @@ export function CasePreview({ teaser, viewer }: { teaser: Teaser; viewer: Viewer
               Ask to join
             </Link>
           )}
-          <p className="text-xs text-line-2">{SAFETY}</p>
         </aside>
       )}
     </div>

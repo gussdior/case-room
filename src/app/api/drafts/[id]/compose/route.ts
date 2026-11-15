@@ -46,6 +46,13 @@ export async function POST(_: Request, ctx: RouteContext<"/api/drafts/[id]/compo
       .from("case_drafts")
       .update({
         sections: result.sections,
+        answers: {
+          ...loaded.draft.answers,
+          suggested_goal: result.goal || undefined,
+          cancer_stage: loaded.draft.answers.cancer_stage || result.stage || undefined,
+          age_range: loaded.draft.answers.age_range || result.ageRange || undefined,
+          current_treatment: loaded.draft.answers.current_treatment || result.currentTreatment || undefined,
+        },
         treatments: result.treatments,
         suggested_tasks: result.tasks,
         cancer_type: result.cancerType || null,

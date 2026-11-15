@@ -1,6 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { EXPERTISE_ORDER, type Expertise } from "@/lib/types";
+import { AGE_RANGES, EXPERTISE_ORDER, type AgeRange, type Expertise } from "@/lib/types";
 import { scrubDeep, type ScrubHit } from "./scrub";
 import {
   FACT_FIELDS,
@@ -189,6 +189,14 @@ const COMPOSE_TOOL: Anthropic.Tool = {
   strict: true,
   input_schema: obj({
     cancer_type: { ...str, description: "Short, e.g. 'Lung cancer'. Max 60 characters." },
+    stage: { ...str, description: "Short, e.g. 'Stage IV', only if a document says it, else empty" },
+    goal: {
+      ...str,
+      description:
+        "The goal of the case as one plain sentence under 140 characters, from what the family wants to know, e.g. 'Find her next options now that the first pill stopped working'. No names.",
+    },
+    age_range: { type: "string", enum: [...AGE_RANGES, "unknown"], description: "Only if a document states the age, else unknown" },
+    current_treatment: { ...str, description: "What she is on or waiting for now, under 80 characters, else empty" },
     visit_date: { ...str, description: "YYYY-MM-DD of the next doctor visit if a document says it, else empty" },
     plain: SECTION_SCHEMA,
     treatments_text: SECTION_SCHEMA,
@@ -238,6 +246,10 @@ type ComposeDoc = { label: string; facts: Fact[]; treatments: DraftTreatment[] }
 
 export type ComposeResult = {
   cancerType: string;
+  stage: string;
+  goal: string;
+  ageRange: AgeRange | null;
+  currentTreatment: string;
   visitDate: string | null;
   sections: Record<TextKey, DraftSection>;
   treatments: DraftTreatment[];
@@ -338,6 +350,10 @@ export async function composeDraft(docs: ComposeDoc[], answers: DraftAnswers): P
   const visit = clampText(raw.visit_date, 10);
   const result: ComposeResult = {
     cancerType: clampText(raw.cancer_type, 60),
+    stage: clampText(raw.stage, 40),
+    goal: clampText(raw.goal, 200),
+    ageRange: (AGE_RANGES as readonly string[]).includes(raw.age_range as string) ? (raw.age_range as AgeRange) : null,
+    currentTreatment: clampText(raw.current_treatment, 80),
     visitDate: /^\d{4}-\d{2}-\d{2}$/.test(visit) ? visit : null,
     sections,
     treatments: cleanTreatments(raw.treatments),

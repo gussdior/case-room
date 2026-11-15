@@ -5,7 +5,7 @@ import { UUID_RE } from "@/lib/time";
 
 export const maxDuration = 120;
 
-/** Case admins ask the AI for 3 to 5 leads to investigate. */
+/** Case admins ask the AI for 4 to 6 leads to investigate. */
 export async function POST(_: Request, ctx: RouteContext<"/api/case/[id]/suggest-leads">) {
   const { id } = await ctx.params;
   if (!UUID_RE.test(id)) return Response.json({ error: "That case link is broken." }, { status: 400 });

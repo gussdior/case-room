@@ -1,10 +1,15 @@
-import type { AiRun, CaseRoom, Finding, Lead, Treatment } from "./types";
+import { AI_DRAFT_LABEL, type AiRun, type CaseRoom, type Finding, type Lead, type Treatment } from "./types";
 
 // A made up case. No real person's data.
 export const SAMPLE_CASE: CaseRoom = {
   id: "sample",
   viewer: null,
-  goal: "Find the best next treatment options to discuss with the oncologist",
+  goal: "Find her next options now that osimertinib stopped working",
+  cancerType: "Lung cancer",
+  cancerStage: "Stage IV",
+  ageRange: "55_64",
+  currentTreatment: "waiting on biopsy results",
+  publicPreview: true,
   summary:
     "A 58 year old woman with stage IV lung adenocarcinoma that has spread to the bones. Her tumor has an EGFR exon 19 deletion. Osimertinib worked for 22 months, but the latest scan shows growth. She is active and walks daily. Shared with consent, name and ID numbers removed.",
   facts: [
@@ -32,9 +37,10 @@ export const SAMPLE_CASE: CaseRoom = {
       id: "s2",
       position: 2,
       title: "Why it may be growing",
-      body: "",
+      body: "The most common reasons this drug stops working are a new gene change (like MET or HER2) or the cancer changing type. The new biopsy should show which one. Ask the doctor which tests the biopsy will include.",
       status: "draft",
       statusNote: "Draft, waiting for check",
+      sourceNote: AI_DRAFT_LABEL,
     },
     {
       id: "s3",
@@ -48,9 +54,10 @@ export const SAMPLE_CASE: CaseRoom = {
       id: "s4",
       position: 4,
       title: "Access and cost",
-      body: "",
+      body: "Most US plans must cover routine care costs inside an approved trial. Travel is usually not covered. Questions to ask: which costs the trial pays for, and whether there is travel help.",
       status: "empty",
       statusNote: "Empty",
+      sourceNote: AI_DRAFT_LABEL,
     },
     {
       id: "s5",
@@ -266,12 +273,12 @@ export const SAMPLE_CASE: CaseRoom = {
 
   members: [
     { id: "family", name: "Family", headline: "Patient's family", expertise: "no_medical", role: "creator", status: "approved" },
-    { id: "priya", name: "Priya", headline: "Oncology nurse, 12 years", expertise: "doctor_nurse", role: "co_approver", status: "approved" },
-    { id: "omar", name: "Omar", headline: "PhD, AI for medicine", expertise: "bioinformatics", role: "volunteer", status: "approved" },
-    { id: "dana", name: "Dana", headline: "Clinical research coordinator", expertise: "researcher", role: "volunteer", status: "approved" },
+    { id: "priya", name: "Priya", headline: "Oncology nurse, 12 years", expertise: "doctor_nurse", role: "co_approver", status: "approved", roleTitle: "nurse" },
+    { id: "omar", name: "Omar", headline: "PhD, AI for medicine", expertise: "bioinformatics", role: "volunteer", status: "approved", roleTitle: "data scientist" },
+    { id: "dana", name: "Dana", headline: "Clinical research coordinator", expertise: "researcher", role: "volunteer", status: "approved", roleTitle: "research coordinator" },
     { id: "leo", name: "Leo", headline: "Applied math, scientific machine learning", expertise: "researcher", role: "volunteer", status: "approved" },
     { id: "jess", name: "Jess", headline: "No medical background, bilingual", expertise: "no_medical", role: "volunteer", status: "approved" },
-    { id: "sam", name: "Sam", headline: "Health insurance advocate", expertise: "insurance_legal", role: "volunteer", status: "approved" },
+    { id: "sam", name: "Sam", headline: "Health insurance advocate", expertise: "insurance_legal", role: "volunteer", status: "approved", roleTitle: "insurance advocate" },
     {
       id: "maya",
       name: "Maya",
@@ -493,7 +500,7 @@ export const SAMPLE_LEADS: Lead[] = [
     ],
     nextStep: "Needs the full gene report file from the family",
     nextStepExpertise: "bioinformatics",
-    aiSuggested: false,
+    aiSuggested: true,
     ruledOutReason: null,
     createdBy: "omar",
     runCount: 3,

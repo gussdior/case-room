@@ -64,9 +64,9 @@ export function PersonLink({ person, className = "" }: { person: Person; classNa
   );
 }
 
-export function Card({ children, className = "", label }: { children: ReactNode; className?: string; label?: string }) {
+export function Card({ children, className = "", label, id }: { children: ReactNode; className?: string; label?: string; id?: string }) {
   return (
-    <section aria-label={label} className={`panel p-5 sm:p-6 ${className}`}>
+    <section id={id} aria-label={label} className={`panel p-5 sm:p-6 ${className}`}>
       {children}
     </section>
   );

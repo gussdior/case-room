@@ -109,8 +109,11 @@ export function AiHelper({
   demo,
   canWrite,
   initial,
+  prefill,
 }: {
   caseId: string;
+  /** Start with this question in the box and the cursor in it. */
+  prefill?: string;
   /** Either a task or a lead. */
   taskId?: string;
   leadId?: string;
@@ -123,7 +126,13 @@ export function AiHelper({
   const onLead = !taskId && !!leadId;
   const router = useRouter();
   const [turns, setTurns] = useState<AiTurn[]>(initial);
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(prefill ?? "");
+  useEffect(() => {
+    if (!prefill) return;
+    const el = document.getElementById("ai-q") as HTMLInputElement | HTMLTextAreaElement | null;
+    el?.focus();
+    el?.setSelectionRange?.(prefill.length, prefill.length);
+  }, [prefill]);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);

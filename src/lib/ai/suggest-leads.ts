@@ -16,7 +16,7 @@ const TOOL: Anthropic.Tool = {
       leads: {
         type: "array",
         minItems: 1,
-        maxItems: 5,
+        maxItems: 6,
         items: {
           type: "object",
           properties: {
@@ -43,7 +43,7 @@ const TOOL: Anthropic.Tool = {
 };
 
 const SYSTEM = `You help a team of volunteers decide what to research for one cancer patient.
-Propose 3 to 5 distinct leads: ideas to investigate with AI tools and public sources, then turn into questions for the patient's own doctor.
+Propose 4 to 6 distinct leads, each tagged with the one skill its first step needs: ideas to investigate with AI tools and public sources, then turn into questions for the patient's own doctor.
 Good kinds of leads: open clinical trials that might fit, approved drugs studied for a new use, personalized or vaccine approaches, tests or scans worth asking about, access and cost help.
 Rules:
 - Ideas to investigate and ask about, never advice. Never say she should take, start or stop anything.
@@ -77,7 +77,7 @@ export async function suggestLeads(supabase: SupabaseClient, caseId: string, use
       messages: [{ role: "user", content: pack }],
     });
     const use = msg.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
-    leads = ((use?.input as { leads?: SuggestedLead[] } | undefined)?.leads ?? []).slice(0, 5);
+    leads = ((use?.input as { leads?: SuggestedLead[] } | undefined)?.leads ?? []).slice(0, 6);
   } catch {
     return { error: "The AI didn't answer. Try again in a minute." };
   }

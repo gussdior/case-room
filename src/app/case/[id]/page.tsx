@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CaseAiBar } from "@/components/case-ai-bar";
+import { DayOneStrip } from "@/components/day-one";
+import { ShareCaseButton } from "@/components/share-case";
 import { CasePreview, PrivateCase } from "@/components/case-preview";
 import { JoinPanel } from "@/components/join-panel";
 import { LeadCard, RailHeading, RunItem } from "@/components/lead-bits";
@@ -10,6 +12,7 @@ import { toolsForCase } from "@/lib/ai-tools";
 import { getViewer } from "@/lib/auth";
 import { getRoom, volunteers } from "@/lib/data";
 import { loadLeads, loadRuns } from "@/lib/db-leads";
+import { AI_DRAFT_LABEL, caseFacts } from "@/lib/types";
 
 export default async function LeadsPage({ params, searchParams }: PageProps<"/case/[id]">) {
   const { id } = await params;
@@ -32,38 +35,64 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
   const openKinds = leads.filter((l) => l.status !== "ruled_out").map((l) => l.kind);
   const tools = toolsForCase(openKinds, 4);
   const canSuggest = demo || !!room.viewer?.isAdmin;
-  const facts = room.cancerType ?? room.facts.find((f) => f.label === "Key mutation")?.value;
+  const facts = caseFacts(room);
+  const isCreator = demo || room.viewer?.role === "creator";
+  const aiLeads = leads.filter((l) => l.aiSuggested).length;
+  const draftedParts = room.sections.filter((s) => s.body.trim() && (s.sourceNote === AI_DRAFT_LABEL || s.sourceNote?.startsWith("From the family"))).length;
+  // The strip is for day one: it goes away once a person has checked any part of the brief.
+  const humanChecked = room.tasks.some((t) => t.status === "checked");
+  const showDayOne = demo || (!humanChecked && (aiLeads + draftedParts > 0 || !!room.viewer?.isAdmin));
 
   return (
     <div className="flex flex-col">
       <section aria-label="Case" className="flex flex-wrap items-end gap-x-10 gap-y-4">
         <div className="min-w-0 flex-[1_1_560px]">
-          <h1 className="max-w-[820px] font-display text-[34px] leading-[1.1] font-medium tracking-[-0.015em] sm:text-[44px]">
+          <h1 className="max-w-[860px] font-display text-[34px] leading-[1.1] font-medium tracking-[-0.015em] sm:text-[44px]">
             {room.goal}
           </h1>
-          <p className="mt-3 max-w-[660px] text-base text-muted">
-            {facts ? `${facts}. ` : ""}
-            {people > 0
-              ? `${people} ${people === 1 ? "person is" : "people are"} using AI to look for her next options. `
-              : "Volunteers use AI to look for her next options. "}
-            Everything checked goes to her doctor as questions.
-          </p>
+          {facts.length > 0 ? (
+            <ul aria-label="Case facts" className="mt-3.5 flex flex-wrap gap-2">
+              {facts.map((f) => (
+                <li key={f} className="rounded-full bg-[#e7eae7] px-3 py-1 text-sm text-ink">
+                  {f}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted">
+              {people > 0 ? `${people} ${people === 1 ? "person is" : "people are"} helping.` : "No helpers yet."}
+            </p>
+          )}
         </div>
-        {room.visitInDays !== null && (
-          <div className="flex-none text-right">
-            <strong className="block font-display text-[40px] leading-none font-medium">
-              {room.visitInDays > 0
-                ? `${room.visitInDays} day${room.visitInDays === 1 ? "" : "s"}`
-                : room.visitInDays === 0
-                  ? "Today"
-                  : "Passed"}
-            </strong>
-            <span className="text-sm text-muted">until the doctor visit</span>
-          </div>
-        )}
+        <div className="flex flex-none flex-col items-end gap-3">
+          {isCreator && <ShareCaseButton caseId={room.id} publicPreview={!!room.publicPreview} demo={demo} />}
+          {room.visitInDays !== null && (
+            <div className="text-right">
+              <strong className="block font-display text-[40px] leading-none font-medium">
+                {room.visitInDays > 0
+                  ? `${room.visitInDays} day${room.visitInDays === 1 ? "" : "s"}`
+                  : room.visitInDays === 0
+                    ? "Today"
+                    : "Passed"}
+              </strong>
+              <span className="text-sm text-muted">until the doctor visit</span>
+            </div>
+          )}
+        </div>
       </section>
 
       <CaseAiBar caseId={room.id} demo={demo} />
+
+      {showDayOne && (
+        <DayOneStrip
+          caseId={room.id}
+          demo={demo}
+          isAdmin={!!room.viewer?.isAdmin}
+          leads={aiLeads}
+          sections={draftedParts}
+          autoStart={sp.new === "1"}
+        />
+      )}
 
       <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
         <section aria-labelledby="leads-h" className="min-w-0">
@@ -84,12 +113,12 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
                 A lead is one idea to check: a trial, an existing drug used a new way, a test worth asking about.
                 {canSuggest ? " Let the AI read the case and suggest a few, or add your own below." : " Add the first one below."}
               </p>
-              {canSuggest && <SuggestLeadsButton caseId={room.id} demo={demo} primary autoStart={sp.new === "1"} />}
+              {canSuggest && <SuggestLeadsButton caseId={room.id} demo={demo} primary />}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
               {leads.map((l) => (
-                <LeadCard key={l.id} caseId={room.id} lead={l} members={room.members} />
+                <LeadCard key={l.id} caseId={room.id} lead={l} members={room.members} demo={demo} viewerId={room.viewer?.id} />
               ))}
             </div>
           )}

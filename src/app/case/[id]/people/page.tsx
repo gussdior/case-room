@@ -10,7 +10,7 @@ import { Avatar, Badge, Card, PersonLink } from "@/components/ui";
 import { approvedMembers, getRoom, leaderboard, memberById, pendingRequests } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/time";
-import { EXPERTISE_LABEL, type CaseRoom } from "@/lib/types";
+import { AGE_RANGE_LABEL, AGE_RANGES, EXPERTISE_LABEL, type CaseRoom } from "@/lib/types";
 
 async function loadReports(room: CaseRoom) {
   if (!room.viewer?.isAdmin) return [];
@@ -191,13 +191,40 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
               </div>
             </Card>
           ) : (
-            <Card label="Case settings" className="flex flex-col gap-3">
+            <Card label="Case settings" className="flex scroll-mt-6 flex-col gap-3" id="settings">
               <h2 className="font-display text-xl font-medium">Case settings</h2>
               <ActionForm action={updateCaseSettings.bind(null, room.id)} className="flex flex-col gap-3" resetOnSuccess={false}>
                 <label htmlFor="s-goal" className={labelClass}>
-                  Goal
+                  Goal of this case
                 </label>
-                <input id="s-goal" name="goal" required maxLength={200} defaultValue={room.goal} className={inputClass} />
+                <input id="s-goal" name="goal" required minLength={10} maxLength={200} defaultValue={room.goal} aria-describedby="s-goal-help" className={inputClass} />
+                <p id="s-goal-help" className="-mt-1 text-[13px] text-muted">
+                  This is the case title. Write it as a plain sentence, like &ldquo;Find her next options now that the first pill
+                  stopped working.&rdquo;
+                </p>
+                <input type="hidden" name="facts_present" value="1" />
+                <label htmlFor="s-age" className={labelClass}>
+                  Age range (optional)
+                </label>
+                <select id="s-age" name="age_range" defaultValue={room.ageRange ?? ""} className={inputClass}>
+                  <option value="">Not shared</option>
+                  {AGE_RANGES.map((a) => (
+                    <option key={a} value={a}>
+                      {AGE_RANGE_LABEL[a]}
+                    </option>
+                  ))}
+                </select>
+                <label htmlFor="s-current" className={labelClass}>
+                  Current treatment (optional)
+                </label>
+                <input
+                  id="s-current"
+                  name="current_treatment"
+                  maxLength={80}
+                  defaultValue={room.currentTreatment ?? ""}
+                  placeholder="Like: osimertinib, or waiting on biopsy results"
+                  className={inputClass}
+                />
                 <label htmlFor="s-summary" className={labelClass}>
                   Case summary (no names or ID numbers)
                 </label>

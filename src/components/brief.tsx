@@ -106,7 +106,11 @@ export function Brief({
             {s.body && (demo || s.sourceNote) && (
               <div className="flex flex-col gap-1.5">
                 <p className="max-w-[68ch] whitespace-pre-line font-serif text-lg leading-relaxed text-ink-2">{s.body}</p>
-                {!demo && s.sourceNote && <span className="text-xs font-semibold text-mark-text">{s.sourceNote}</span>}
+                {s.sourceNote && (
+                  <span className="self-start rounded-full bg-mark-soft px-2.5 py-0.5 text-xs font-semibold text-mark-text">
+                    {s.sourceNote}
+                  </span>
+                )}
               </div>
             )}
             {demo && s.body ? null : (

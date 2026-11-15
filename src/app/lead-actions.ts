@@ -125,3 +125,19 @@ export async function bumpReuse(caseId: string, runId: string): Promise<Result> 
   await supabase.rpc("bump_reuse", { r: runId });
   return undefined;
 }
+
+// ---------- Taking a lead ----------
+
+export async function takeLead(caseId: string, leadId: string): Promise<Result> {
+  const bad = await ready(caseId, leadId);
+  if (bad) return bad;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("take_lead", { l: leadId });
+  if (error) {
+    if (error.message?.includes("Lead not found")) return { error: "Join this case first to take a lead." };
+    if (error.message?.includes("ruled out")) return { error: "This lead was ruled out." };
+    return friendly(error);
+  }
+  revalidatePath(`/case/${caseId}`, "layout");
+  return { ok: "You're on it." };
+}

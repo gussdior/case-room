@@ -10,7 +10,7 @@ const month = (d: string | null) => (d ? d.slice(0, 7) : "");
 export async function buildPack(supabase: SupabaseClient, caseId: string, leadId?: string | null): Promise<string | null> {
   const { data: kase } = await supabase
     .from("cases")
-    .select("goal, summary, cancer_type, visit_date")
+    .select("goal, summary, cancer_type, cancer_stage, age_range, current_treatment, visit_date")
     .eq("id", caseId)
     .maybeSingle();
   if (!kase) return null;
@@ -39,6 +39,9 @@ export async function buildPack(supabase: SupabaseClient, caseId: string, leadId
     "## About the case",
     `Goal: ${kase.goal}`,
     kase.cancer_type ? `Cancer type: ${kase.cancer_type}` : "",
+    kase.cancer_stage ? `Stage: ${kase.cancer_stage}` : "",
+    kase.age_range ? `Age range: ${String(kase.age_range).replace("_plus", " and over").replace("under_", "under ").replace("_", " to ")}` : "",
+    kase.current_treatment ? `Current treatment: ${kase.current_treatment}` : "",
     kase.visit_date ? `Next doctor visit: ${kase.visit_date}` : "",
     kase.summary ? `Summary: ${kase.summary}` : "",
     "",

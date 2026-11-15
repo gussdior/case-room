@@ -43,7 +43,43 @@ export type Member = Person & {
   aiFlag?: boolean;
   requestedAt?: string;
   proofUrl?: string | null;
+  /** Their own words for their role, like "oncology nurse". */
+  roleTitle?: string | null;
 };
+
+/** Shown near the top of every case page. */
+export const CASE_SAFETY_LINE = "Everything here becomes questions for the patient's doctor. It is not treatment advice.";
+
+/** Label on anything the AI wrote that no person has checked yet. */
+export const AI_DRAFT_LABEL = "AI draft, not yet checked by a person";
+
+/** Short role shown next to someone's initial, like "nurse" or "researcher". */
+export function roleLabel(m: Pick<Member, "roleTitle" | "expertise">): string {
+  const t = m.roleTitle?.trim();
+  if (t) return t.length > 28 ? `${t.slice(0, 26).trimEnd()}...` : t.toLowerCase();
+  return m.expertise === "no_medical" ? "volunteer" : EXPERTISE_LABEL[m.expertise].toLowerCase();
+}
+
+export type AgeRange = "under_18" | "18_34" | "35_54" | "55_64" | "65_74" | "75_plus";
+export const AGE_RANGE_LABEL: Record<AgeRange, string> = {
+  under_18: "Under 18",
+  "18_34": "Age 18 to 34",
+  "35_54": "Age 35 to 54",
+  "55_64": "Age 55 to 64",
+  "65_74": "Age 65 to 74",
+  "75_plus": "Age 75 and over",
+};
+export const AGE_RANGES = Object.keys(AGE_RANGE_LABEL) as AgeRange[];
+
+/** The facts line under a case title. Only values that are set. */
+export function caseFacts(room: Pick<CaseRoom, "cancerType" | "cancerStage" | "ageRange" | "currentTreatment">): string[] {
+  return [
+    room.cancerType,
+    room.cancerStage,
+    room.ageRange ? AGE_RANGE_LABEL[room.ageRange] : null,
+    room.currentTreatment ? `Now: ${room.currentTreatment}` : null,
+  ].filter((x): x is string => !!x && x.trim().length > 0);
+}
 
 export type Submission = {
   id: string;
@@ -122,6 +158,8 @@ export type CaseRoom = {
   cancerStage?: string | null;
   publicPreview?: boolean;
   previewShowVisit?: boolean;
+  ageRange?: AgeRange | null;
+  currentTreatment?: string | null;
   coApproverId?: string;
   creatorId?: string;
   sections: Section[];

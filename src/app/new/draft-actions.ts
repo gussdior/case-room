@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/auth";
 import { UUID_RE } from "@/lib/time";
+import { AGE_RANGES, type AgeRange } from "@/lib/types";
 import { scrub, type ScrubHit } from "@/lib/drafts/scrub";
 import { DRAFT_COLUMNS, toDraft } from "@/lib/drafts/db";
 import {
@@ -68,7 +69,7 @@ export async function saveWho(input: {
       const d = await current(input.draftId);
       if (!d) return { ok: false, error: "Draft not found." };
       const sections = { ...d.sections, wants: { ...(d.sections.wants ?? { citations: [], questions: [] }), text: wants } };
-      return patch(input.draftId, { answers, sections });
+      return patch(input.draftId, { answers: { ...d.answers, ...answers }, sections });
     }
     const supabase = await client();
     const { data, error } = await supabase.from("case_drafts").insert({ answers }).select(DRAFT_COLUMNS).single();
@@ -254,15 +255,48 @@ export async function deleteOneFile(draftId: string, docId: string): Promise<{ o
 }
 
 /** Step 5. Checks once more for identifiers, then opens the case. */
+/** Last step: the case title (goal) and the short facts shown under it. */
+export async function saveOpenDetails(
+  id: string,
+  input: { goal: string; ageRange: string; currentTreatment: string; stage: string },
+): Promise<Out> {
+  try {
+    const d = await current(id);
+    if (!d) return { ok: false, error: "Draft not found." };
+    const goal = scrub(input.goal.replace(/\s+/g, " ").trim().slice(0, 200)).text;
+    const answers: DraftAnswers = {
+      ...d.answers,
+      goal,
+      age_range: AGE_RANGES.includes(input.ageRange as AgeRange) ? input.ageRange : "",
+      current_treatment: scrub(input.currentTreatment.trim().slice(0, 80)).text,
+      cancer_stage: scrub(input.stage.trim().slice(0, 40)).text,
+    };
+    return patch(id, { answers });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Something went wrong." };
+  }
+}
+
 export async function publishDraft(id: string): Promise<{ ok: true; caseId: string } | { ok: false; error: string }> {
   try {
     const d = await current(id);
     if (!d) return { ok: false, error: "Draft not found." };
     if (d.caseId) return { ok: true, caseId: d.caseId };
     if (scanDraft(d).items.length) return { ok: false, error: "Something still looks like a name or ID. Go back to the privacy check." };
+    const goal = (d.answers.goal ?? "").trim();
+    if (goal.length < 10) return { ok: false, error: "Write the goal of this case as a plain sentence of at least 10 characters." };
     const supabase = await client();
     const { data, error } = await supabase.rpc("publish_draft", { d: id });
     if (error || !data) return { ok: false, error: error?.message?.split("\n")[0] || "Couldn't open the case." };
+    // The goal the family wrote is the case title. Facts show under it.
+    await supabase.rpc("set_case_facts", {
+      c: data,
+      p_goal: goal,
+      p_age_range: d.answers.age_range || null,
+      p_current_treatment: d.answers.current_treatment || null,
+      p_cancer_type: null,
+      p_cancer_stage: d.answers.cancer_stage || null,
+    });
     if (!d.keepFiles) await removeFiles(id);
     revalidatePath("/cases");
     return { ok: true, caseId: data as string };

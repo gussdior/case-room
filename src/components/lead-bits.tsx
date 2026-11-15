@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { AI_TOOL_LABEL, LEAD_STATUS_LABEL, type AiRun, type Lead, type LeadStatus, type Member } from "@/lib/types";
+import { AI_TOOL_LABEL, LEAD_STATUS_LABEL, roleLabel, type AiRun, type Lead, type LeadStatus, type Member } from "@/lib/types";
+import { LeadCardActions } from "./lead-card-actions";
 import { RunActions } from "./run-actions";
 import { Avatar, ExpertiseBadge, PersonLink } from "./ui";
 
@@ -19,32 +20,59 @@ export function LeadStatusChip({ status }: { status: LeadStatus }) {
   );
 }
 
-function Faces({ ids, members }: { ids: string[]; members: Member[] }) {
+/** Who is on a lead: initial plus role, like "D, nurse". */
+export function Faces({ ids, members, max = 4 }: { ids: string[]; members: Member[]; max?: number }) {
   const people = ids.map((id) => members.find((m) => m.id === id)).filter((m): m is Member => !!m);
   if (people.length === 0) return null;
   return (
-    <span className="flex" aria-label={`${people.length} ${people.length === 1 ? "person" : "people"} on it`}>
-      {people.slice(0, 5).map((p, i) => (
-        <span key={p.id} className={`rounded-full border-2 border-white ${i ? "-ml-1.5" : ""}`}>
+    <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      {people.slice(0, max).map((p) => (
+        <span key={p.id} className="inline-flex items-center gap-1.5" title={p.name}>
           <Avatar person={p} size={24} />
+          <span className="text-[13px] text-ink-2">
+            {p.name.replace("Dr. ", "").charAt(0).toUpperCase()}, {roleLabel(p)}
+          </span>
         </span>
       ))}
+      {people.length > max && <span className="text-[13px]">and {people.length - max} more</span>}
     </span>
   );
 }
 
-/** One lead in the list: lifts on hover, ruled out ones fade back. */
-export function LeadCard({ caseId, lead, members }: { caseId: string; lead: Lead; members: Member[] }) {
+/** One lead in the list: the title links to the lead, the whole card lifts on hover, ruled out ones fade back. */
+export function LeadCard({
+  caseId,
+  lead,
+  members,
+  demo = false,
+  signedIn = true,
+  viewerId,
+}: {
+  caseId: string;
+  lead: Lead;
+  members: Member[];
+  demo?: boolean;
+  signedIn?: boolean;
+  viewerId?: string;
+}) {
   const out = lead.status === "ruled_out";
+  const mine = !!viewerId && lead.people.includes(viewerId);
+  const href = `/case/${caseId}/lead/${lead.id}`;
   return (
-    <Link
-      href={`/case/${caseId}/lead/${lead.id}`}
-      className={`group grid grid-cols-[minmax(0,1fr)_auto] gap-x-5 gap-y-2.5 rounded-[14px] border border-line bg-white px-[22px] py-5 text-ink no-underline transition-[border-color,transform,box-shadow,opacity] duration-150 hover:-translate-y-0.5 hover:border-brand-line hover:text-ink hover:shadow-[0_14px_30px_-20px_rgba(43,63,160,0.55)] ${
+    <article
+      className={`group relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-5 gap-y-2.5 rounded-[14px] border border-line bg-white px-[22px] py-5 text-ink transition-[border-color,transform,box-shadow,opacity] duration-150 focus-within:border-brand-line hover:-translate-y-0.5 hover:border-brand-line hover:shadow-[0_14px_30px_-20px_rgba(43,63,160,0.55)] ${
         out ? "opacity-75 hover:opacity-100" : ""
       }`}
     >
       <div className="min-w-0">
-        <h3 className="font-display text-[22px] leading-tight font-medium">{lead.title}</h3>
+        <h3 className="font-display text-[22px] leading-tight font-medium">
+          <Link
+            href={href}
+            className="text-ink no-underline after:absolute after:inset-0 after:rounded-[14px] after:content-[''] hover:text-ink"
+          >
+            {lead.title}
+          </Link>
+        </h3>
         {(lead.idea || lead.ruledOutReason) && (
           <p className="mt-1 text-[15px] text-ink-2">{out && lead.ruledOutReason ? lead.ruledOutReason : lead.idea}</p>
         )}
@@ -73,7 +101,14 @@ export function LeadCard({ caseId, lead, members }: { caseId: string; lead: Lead
       {!out && lead.nextStep && lead.status === "promising" && (
         <div className="col-span-2 text-[13px] text-muted">{lead.nextStep}</div>
       )}
-    </Link>
+      <LeadCardActions
+        caseId={caseId}
+        leadId={lead.id}
+        canTake={lead.status === "needs_someone" && !mine}
+        demo={demo}
+        signedIn={signedIn}
+      />
+    </article>
   );
 }
 

@@ -9,10 +9,11 @@ import { ReusePromptButton } from "@/components/reuse-prompt-button";
 import { Avatar, ExpertiseBadge, PersonLink } from "@/components/ui";
 import { getRoom, memberById } from "@/lib/data";
 import { loadLeadEvents, loadLeads, loadRuns, loadTopPrompts } from "@/lib/db-leads";
-import { EXPERTISE_LABEL, LEAD_KIND_LABEL, type Member } from "@/lib/types";
+import { EXPERTISE_LABEL, LEAD_KIND_LABEL, roleLabel, type Member } from "@/lib/types";
 
-export default async function LeadPage({ params }: PageProps<"/case/[id]/lead/[leadId]">) {
+export default async function LeadPage({ params, searchParams }: PageProps<"/case/[id]/lead/[leadId]">) {
   const { id, leadId } = await params;
+  const sp = await searchParams;
   const loaded = await getRoom(id);
   if (!loaded) notFound();
   if (loaded.teaser) redirect(`/case/${id}`);
@@ -109,7 +110,15 @@ export default async function LeadPage({ params }: PageProps<"/case/[id]/lead/[l
 
           <section id="ai" aria-label="Ask AI about this lead" className="panel scroll-mt-6 p-5 sm:p-6">
             <h2 className="mb-4 font-display text-xl font-medium">Ask AI about this lead</h2>
-            <AiHelper caseId={room.id} leadId={lead.id} taskTitle={lead.title} demo={demo} canWrite={false} initial={[]} />
+            <AiHelper
+              caseId={room.id}
+              leadId={lead.id}
+              taskTitle={lead.title}
+              demo={demo}
+              canWrite={false}
+              initial={[]}
+              prefill={sp.ask === "1" ? "What should I check first for this lead?" : undefined}
+            />
           </section>
 
           <section aria-label="Status" className="panel p-5 sm:p-6">
@@ -148,7 +157,7 @@ export default async function LeadPage({ params }: PageProps<"/case/[id]/lead/[l
                     <Avatar person={p} size={34} />
                     <div className="min-w-0 flex-1">
                       <PersonLink person={p} className="text-sm font-semibold" />
-                      {p.headline && <div className="truncate text-xs text-muted">{p.headline}</div>}
+                      <div className="truncate text-xs text-muted">{p.headline || roleLabel(p)}</div>
                     </div>
                     <ExpertiseBadge expertise={p.expertise} />
                   </li>

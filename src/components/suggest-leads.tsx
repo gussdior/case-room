@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-/** Case admins ask the AI for 3 to 5 ideas to investigate. */
+/** Case admins ask the AI for 4 to 6 ideas to investigate. */
 export function SuggestLeadsButton({
   caseId,
   demo,

@@ -16,7 +16,7 @@ import {
   type TaskStatus,
 } from "./types";
 
-type ProfileRow = { display_name: string; headline: string | null; expertise: Expertise; proof_url: string | null };
+type ProfileRow = { display_name: string; headline: string | null; expertise: Expertise; proof_url: string | null; role_title: string | null };
 
 export type Teaser = {
   kind: "teaser";
@@ -72,7 +72,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
 
   const { data: c } = await supabase
     .from("cases")
-    .select("id, goal, summary, visit_date, join_mode, is_sample, created_by, listed, cancer_type, public_goal, cancer_stage, public_preview, preview_show_visit")
+    .select("id, goal, summary, visit_date, join_mode, is_sample, created_by, listed, cancer_type, public_goal, cancer_stage, public_preview, preview_show_visit, age_range, current_treatment")
     .eq("id", id)
     .maybeSingle();
 
@@ -99,7 +99,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
     supabase
       .from("case_members")
       .select(
-        "user_id, role, status, expertise, request_note, hours_per_week, proof_url, ai_note, created_at, profile:profiles!case_members_user_id_fkey(display_name, headline, expertise, proof_url)",
+        "user_id, role, status, expertise, request_note, hours_per_week, proof_url, ai_note, created_at, profile:profiles!case_members_user_id_fkey(display_name, headline, expertise, proof_url, role_title)",
       )
       .eq("case_id", id)
       .in("status", ["approved", "pending"]),
@@ -135,6 +135,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
       proofChecked: false,
       aiNote: m.ai_note ?? undefined,
       requestedAt: timeAgo(m.created_at),
+      roleTitle: p?.role_title ?? null,
     };
   });
 
@@ -230,6 +231,8 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
     cancerStage: c.cancer_stage ?? null,
     publicPreview: !!c.public_preview,
     previewShowVisit: c.preview_show_visit !== false,
+    ageRange: (c.age_range as CaseRoom["ageRange"]) ?? null,
+    currentTreatment: c.current_treatment ?? null,
     coApproverId: members.find((m) => m.role === "co_approver" && m.status === "approved")?.id,
     creatorId: c.created_by,
     sections,
