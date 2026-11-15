@@ -36,9 +36,14 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
               <Link href={`/profile/${viewer.id}`}>Your profile</Link>
             </p>
           </div>
-          <Link href="/new" className={btn.mark}>
-            Start a case
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/cases/open" className={btn.secondary}>
+              Browse cases to help
+            </Link>
+            <Link href="/new" className={btn.mark}>
+              Start a case
+            </Link>
+          </div>
         </div>
 
         {cases.length === 0 ? (

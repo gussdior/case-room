@@ -13,6 +13,9 @@ export async function AppHeader({ children, right }: { children?: ReactNode; rig
         {children}
         <div className="ml-auto flex flex-wrap items-center gap-1">
           {right}
+          <Link href="/cases/open" className="nav-link">
+            Browse cases
+          </Link>
           {viewer ? (
             <>
               <Link href="/cases" className="nav-link">
