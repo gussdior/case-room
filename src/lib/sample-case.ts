@@ -26,7 +26,7 @@ export const SAMPLE_CASE: CaseRoom = {
       title: "The case in plain words",
       body: "Stage IV lung adenocarcinoma with an EGFR exon 19 deletion. Osimertinib worked for 22 months; the latest scan shows growth.",
       status: "checked",
-      statusNote: "Checked by Leo and AI",
+      statusNote: "Checked by Leo, sources checked by AI",
     },
     {
       id: "s2",

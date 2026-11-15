@@ -67,7 +67,7 @@ export function Brief({
     <article aria-label="The brief for the doctor" className="sheet px-5 py-8 sm:px-12 sm:py-11">
       <header className="mb-6 flex flex-wrap items-baseline gap-3 border-b border-line pb-5">
         <h2 className="font-display text-[26px] font-medium">The brief for the doctor</h2>
-        <span className="ml-auto text-[13px] text-muted">Only checked work counts. Questions, not medical advice.</span>
+        <span className="ml-auto text-[13px] text-muted">Medical claims go in only after a second person checks them. Questions, not medical advice.</span>
       </header>
 
       <div role="group" aria-label="Highlight what needs" className="mb-7 flex flex-wrap items-center gap-1.5">

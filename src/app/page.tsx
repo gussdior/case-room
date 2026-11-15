@@ -26,13 +26,13 @@ const STEPS = [
     title: "Kind people ask to join",
     body: "Everyday people with good hearts help, using the AI they already use. The family says yes.",
   },
-  { title: "AI checks every step", body: "Every finding needs a source, and AI checks it before it counts." },
+  { title: "Every step gets checked", body: "AI checks that each source works and backs the claim. A second person checks every medical claim before it reaches the doctor." },
   { title: "The patient walks in informed", body: "Better informed than ever, with clear questions for their own doctor." },
 ];
 
 const RULES = [
   { title: "Questions, never advice", body: "The patient's own doctor decides. We bring better questions." },
-  { title: "Every claim has a source", body: "Nothing counts until a second person or the AI checks it." },
+  { title: "Every claim has a source", body: "AI checks each link. A second person checks every medical claim before it goes in the brief." },
   { title: "Free, and private by default", body: "No money asked. Families choose what is shared and who joins." },
 ];
 

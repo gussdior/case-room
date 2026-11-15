@@ -155,7 +155,7 @@ export default async function TriedPage({ params, searchParams }: PageProps<"/ca
           <h2 id="findings" className="font-display text-[26px] font-medium">
             What the team checked
           </h2>
-          <p className="mt-1 mb-5 text-sm text-muted">Every finding has a source. It counts once a second person checks it.</p>
+          <p className="mt-1 mb-5 text-sm text-muted">Every finding has a source. AI checks the link, and it counts once a second person checks it.</p>
 
           {views.length === 0 ? (
             <div className="mb-6 rounded-[12px] border border-dashed border-line-2 px-5 py-8 text-center">

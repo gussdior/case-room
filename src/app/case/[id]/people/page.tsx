@@ -86,9 +86,9 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
                   </div>
                   {demo ? (
                     m.proofChecked ? (
-                      <Badge tone="ok">{m.expertise === "doctor_nurse" ? "License checked" : "Profile link checked"}</Badge>
+                      <Badge tone="neutral">Link provided, not verified</Badge>
                     ) : (
-                      <Badge tone="bad">Nothing to check</Badge>
+                      <Badge tone="bad">No link given</Badge>
                     )
                   ) : m.proofUrl ? (
                     <a href={m.proofUrl} target="_blank" rel="noopener noreferrer nofollow" className="text-xs font-semibold">

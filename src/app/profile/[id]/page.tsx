@@ -83,7 +83,7 @@ export default async function ProfilePage({ params }: PageProps<"/profile/[id]">
           <div className="min-w-0 flex-[1_1_420px]">
             <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="font-display text-[38px] leading-tight font-medium tracking-[-0.01em]">{p.name}</h1>
-              {p.hasProof && <Badge tone="ok">Link provided</Badge>}
+              {p.hasProof && <Badge tone="neutral">Link provided, not verified</Badge>}
             </div>
             <p className="mt-1 text-muted">
               {[p.headline, facts].filter(Boolean).join(". ")}
