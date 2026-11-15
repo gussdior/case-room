@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { deleteCase } from "@/app/delete-actions";
+import { AiLinksSwitch } from "@/components/ai-links-switch";
 import { DeleteZone } from "@/components/delete-zone";
 import { ListingFields } from "@/components/listing-fields";
 import { decideRequest, removeMember, setCoApprover, updateCaseSettings } from "@/app/case-actions";
@@ -292,6 +293,13 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
                   Save
                 </SubmitButton>
               </ActionForm>
+            </Card>
+          )}
+
+          {!demo && isCreator && (
+            <Card label="AI links" className="flex flex-col gap-2">
+              <h2 className="font-display text-xl font-medium">AI links</h2>
+              <AiLinksSwitch caseId={room.id} allowed={room.aiLinksAllowed !== false} />
             </Card>
           )}
 

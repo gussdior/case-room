@@ -41,8 +41,32 @@ const TOOL: Anthropic.Tool = {
           additionalProperties: false,
         },
       },
+      reddit: {
+        type: "object",
+        description: "A Reddit text post for the family's own account, plus a short comment that carries the link.",
+        properties: {
+          place: {
+            type: "string",
+            description:
+              "The kinds of subreddits that fit, in plain words, for example 'Cancer support and caregiver subreddits'. Only name a specific subreddit if you are sure it exists and is well known, like r/cancer. Never invent subreddit names.",
+          },
+          skill: { type: "string", enum: EXPERTISE_ORDER },
+          why: { type: "string", description: "One sentence: why people there can help" },
+          post: {
+            type: "string",
+            description:
+              "A text post. Story first in the family's own voice, then one clear ask for research help with one skill and roughly how long it takes. No link, no web address and no site name anywhere in it. Never asks for medical advice. Under 1200 characters. No names, ages in years, places, hospitals, doctors or dates.",
+          },
+          comment: {
+            type: "string",
+            description: `A short reply to post only if someone asks for the link or the subreddit allows links. One or two sentences ending with ${LINK_TOKEN}. Under 300 characters.`,
+          },
+        },
+        required: ["place", "skill", "why", "post", "comment"],
+        additionalProperties: false,
+      },
     },
-    required: ["places"],
+    required: ["places", "reddit"],
     additionalProperties: false,
   },
 };
@@ -54,9 +78,15 @@ Write each post in the family's voice, warm and plain:
 - Ask for one specific skill and roughly how much time it takes.
 - Say plainly it is about better questions for her doctor, never treatment advice, and nobody is asked for money.
 - End with a line that contains ${LINK_TOKEN} exactly once, where the case link goes.
+Also write one Reddit text post, separate from the places:
+- It is posted from the family's own account, so write it in the first person, story first.
+- No link, web address or site name in the post body. Many subreddits remove posts that carry links.
+- Ask for research help and for help writing questions for her doctor. Never ask what treatment she should take, and never ask for medical advice.
+- Add a separate short comment that holds ${LINK_TOKEN} exactly once, to post only if someone asks or the subreddit allows links.
 Never include names, exact ages, cities, hospitals, doctor names, dates of birth or ID numbers. Never promise a cure or results.`;
 
 export type Place = { place: string; kind: OutreachKind; skill: Expertise; why: string; community: boolean; post: string };
+export type RedditPost = { place: string; skill: Expertise; why: string; post: string; comment: string };
 
 /** Builds a short, identifier free description of the case for the AI. The caller must be the creator. */
 async function context(supabase: SupabaseClient, caseId: string): Promise<string | null> {
@@ -90,22 +120,28 @@ async function context(supabase: SupabaseClient, caseId: string): Promise<string
 }
 
 /** Asks the AI for places and posts. Returns posts with the link token still in place. */
-export async function writeOutreach(supabase: SupabaseClient, caseId: string): Promise<{ places?: Place[]; error?: string }> {
+export async function writeOutreach(
+  supabase: SupabaseClient,
+  caseId: string,
+): Promise<{ places?: Place[]; reddit?: RedditPost | null; error?: string }> {
   if (!process.env.ANTHROPIC_API_KEY) return { error: "The AI isn't switched on yet. The site owner needs to add the AI key." };
   const ctx = await context(supabase, caseId);
   if (!ctx) return { error: "Only the case creator can do this." };
   let places: Place[] = [];
+  let rawReddit: Partial<RedditPost> | undefined;
   try {
     const msg = await new Anthropic().messages.create({
       model: MODEL,
-      max_tokens: 3000,
+      max_tokens: 4000,
       system: SYSTEM,
       tools: [TOOL],
       tool_choice: { type: "tool", name: TOOL.name },
       messages: [{ role: "user", content: ctx }],
     });
     const use = msg.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
-    places = ((use?.input as { places?: Place[] } | undefined)?.places ?? []).slice(0, 5);
+    const input = use?.input as { places?: Place[]; reddit?: Partial<RedditPost> } | undefined;
+    places = (input?.places ?? []).slice(0, 5);
+    rawReddit = input?.reddit;
   } catch {
     return { error: "The AI didn't answer. Try again in a minute." };
   }
@@ -120,7 +156,29 @@ export async function writeOutreach(supabase: SupabaseClient, caseId: string): P
     }))
     .filter((p) => p.place.length >= 2 && p.post.length >= 20);
   if (clean.length === 0) return { error: "The AI didn't return any posts. Try again." };
-  return { places: clean };
+  return { places: clean, reddit: cleanReddit(rawReddit) };
+}
+
+/** The Reddit post never carries a link or the token. The comment carries the link exactly once. */
+function cleanReddit(r: Partial<RedditPost> | undefined): RedditPost | null {
+  if (!r) return null;
+  const post = scrub(String(r.post ?? ""))
+    .text.split(LINK_TOKEN)
+    .join("")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/\bwww\.\S+/gi, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .trim()
+    .slice(0, 1900);
+  if (post.length < 40) return null;
+  const comment = withToken(scrub(String(r.comment ?? "")).text.trim() || "Here is the case, with no names:").slice(0, 580);
+  return {
+    place: scrub(String(r.place ?? "")).text.trim().slice(0, 120) || "Cancer support and research subreddits",
+    skill: EXPERTISE_ORDER.includes(r.skill as Expertise) ? (r.skill as Expertise) : "researcher",
+    why: scrub(String(r.why ?? "")).text.trim().slice(0, 400),
+    post,
+    comment,
+  };
 }
 
 /** Makes sure every post has the link exactly once. */

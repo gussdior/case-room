@@ -115,3 +115,12 @@ The key bypasses all row level security. Keep it server only: never prefix it wi
   memberships and private AI chats. Work they shared in other cases stays, credited to "Deleted user". Removing the sign
   in record needs `SUPABASE_SERVICE_ROLE_KEY` (soft delete through the admin API). Without the key the sign in record
   stays, and signing in again starts a fresh empty profile.
+
+## AI share links
+
+People on a case can create a link at `/ai/<token>` that any AI can read (migration `0018_ai_links.sql`).
+- Only a hash of the token is stored, so the full link is shown once, when it is created.
+- The page and `/ai/<token>/text` show the chosen case text with no names, member identities, documents or messages.
+- Links expire after 24 hours, 7 days or 30 days, can be turned off, and the creator can switch AI links off for the whole case.
+- `ai_link_pack` is callable signed out on purpose. The regex scrub runs in the app, so a direct database call with a valid token skips that second pass.
+- Reddit posts reuse `case_outreach` with `reddit = true` and kind `other`, because changing the kind check would need a constraint to be removed.

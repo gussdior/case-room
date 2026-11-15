@@ -27,18 +27,33 @@ export async function POST(_: Request, ctx: RouteContext<"/api/case/[id]/outreac
   if (!r.places) return Response.json({ error: r.error ?? "Something went wrong. Try again." }, { status: 502 });
   const { error: archiveError } = await supabase.rpc("archive_outreach", { c: id });
   if (archiveError) return Response.json({ error: "Couldn't save the posts. Try again." }, { status: 500 });
-  const { error } = await supabase.from("case_outreach").insert(
-    r.places.map((p) => ({
+  const rows = r.places.map((p) => ({
+    case_id: id,
+    place: p.place,
+    kind: p.kind as string,
+    skill: p.skill,
+    why: p.why,
+    community: p.community,
+    post: p.post,
+    created_by: userId,
+    reddit: false,
+    comment: null as string | null,
+  }));
+  // The Reddit post goes first. It is a text post with no link; the link lives in a separate comment.
+  if (r.reddit)
+    rows.unshift({
       case_id: id,
-      place: p.place,
-      kind: p.kind,
-      skill: p.skill,
-      why: p.why,
-      community: p.community,
-      post: p.post,
+      place: r.reddit.place,
+      kind: "other",
+      skill: r.reddit.skill,
+      why: r.reddit.why,
+      community: true,
+      post: r.reddit.post,
       created_by: userId,
-    })),
-  );
+      reddit: true,
+      comment: r.reddit.comment,
+    });
+  const { error } = await supabase.from("case_outreach").insert(rows);
   if (error) return Response.json({ error: "Couldn't save the posts. Try again." }, { status: 500 });
   revalidatePath(`/case/${id}/share`);
   return Response.json({ places: r.places.length });

@@ -6,6 +6,7 @@ import { AskTeamBox } from "./ask-team";
 import { AnsweredQuestions, YourQuestions } from "./case-questions";
 import { JoinAction } from "./join-panel";
 import { Badge, ExpertiseBadge } from "./ui";
+import { SCAM_WARNING } from "@/lib/types";
 
 
 /** What a shared link shows before the family approves someone. */
@@ -71,6 +72,10 @@ export function CasePreview({
         </div>
 
         <AskTeamBox caseId={teaser.id} signedIn={!!viewer} demo={demo} />
+        <p role="note" className="mt-3 rounded-[10px] border border-bad-line bg-bad-tint px-3.5 py-2.5 text-[13px] text-ink-2">
+          <strong className="font-semibold text-bad">For the family: </strong>
+          {SCAM_WARNING}
+        </p>
         <YourQuestions questions={mine} />
         <AnsweredQuestions questions={questions} />
       </section>

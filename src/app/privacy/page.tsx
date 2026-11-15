@@ -1,4 +1,4 @@
-import { H2, LegalPage } from "@/components/legal";
+import { H2, LawyerTag, LegalPage } from "@/components/legal";
 
 export const metadata = { title: "Privacy | Case Room" };
 
@@ -15,6 +15,12 @@ export default function PrivacyPage() {
       <p>
         Only the person who created it and the people they approve. If the creator turns on the public preview, anyone
         can see the goal, cancer type and stage, skills needed and how many people are helping. Nothing else.
+      </p>
+      <p>
+        <LawyerTag />
+        People on a case can also create an AI link. It shows the case text they choose, with no names or documents, to
+        anyone holding the link until it expires or is turned off. The case creator can switch AI links off for the whole
+        case.
       </p>
       <H2>Your documents</H2>
       <p>

@@ -31,3 +31,12 @@ export function H2({ children, review, id }: { children: ReactNode; review?: boo
     </h2>
   );
 }
+
+/** Marks one sentence for the lawyer, in the same style as the heading tags. */
+export function LawyerTag() {
+  return (
+    <span className="mr-2 inline-block rounded-[10px] bg-bad-soft px-2 py-0.5 align-[2px] font-sans text-[11px] font-semibold text-bad">
+      Lawyer review
+    </span>
+  );
+}

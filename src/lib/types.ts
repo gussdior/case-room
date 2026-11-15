@@ -50,6 +50,10 @@ export type Member = Person & {
 /** Shown near the top of every case page. */
 export const CASE_SAFETY_LINE = "Everything here becomes questions for the patient's doctor. It is not treatment advice.";
 
+/** Shown wherever a family is about to post in public. */
+export const SCAM_WARNING =
+  "After you post publicly, strangers may message you with miracle cures or paid help. Do not reply. Real helpers never ask for money.";
+
 /** Label on anything the AI wrote that no person has checked yet. */
 export const AI_DRAFT_LABEL = "AI draft, not yet checked by a person";
 
@@ -158,6 +162,8 @@ export type CaseRoom = {
   cancerStage?: string | null;
   publicPreview?: boolean;
   previewShowVisit?: boolean;
+  /** The creator can switch off AI share links for the case. */
+  aiLinksAllowed?: boolean;
   ageRange?: AgeRange | null;
   currentTreatment?: string | null;
   coApproverId?: string;

@@ -631,7 +631,21 @@ export const SAMPLE_OUTREACH: {
   community: boolean;
   post: string;
   posted: boolean;
+  reddit?: boolean;
+  comment?: string;
 }[] = [
+  {
+    id: "o-reddit",
+    place: "Cancer support and research subreddits",
+    kind: "other",
+    skill: "researcher",
+    why: "People there read research for their own families, and many use AI for it every day.",
+    community: true,
+    reddit: true,
+    post: "My mom has stage IV lung cancer. Her targeted pill worked for two years and then stopped. Her next oncology visit is in 12 days and we want to walk in with the right questions.\n\nA few volunteers and I have been using AI to read trials and recent papers, and we have a short list of ideas to check. I'm looking for one or two people who are comfortable reading cancer research to look over what we found and tell us what we got wrong. About an hour.\n\nI'm not asking for medical advice or what she should take. I only want better questions for her doctor. Nobody is asking for money.",
+    comment: "Thank you. Here is the case with no names, and you can ask to join there: {LINK}",
+    posted: false,
+  },
   {
     id: "o-patients",
     place: "Lung cancer patient and caregiver groups",
@@ -730,3 +744,16 @@ export function samplePreviewTeaser(): Teaser {
     },
   };
 }
+
+/** Sample active AI links for the sample case's share page. */
+export const SAMPLE_AI_LINKS: {
+  id: string;
+  role: "everyone" | "researcher" | "doctor_nurse" | "bioinformatics" | "insurance_legal";
+  expires: string;
+  by: string;
+  opens: number;
+  canTurnOff: boolean;
+}[] = [
+  { id: "ai-1", role: "researcher", expires: "6 days", by: "Dana", opens: 3, canTurnOff: true },
+  { id: "ai-2", role: "everyone", expires: "20 hours", by: "Omar", opens: 1, canTurnOff: true },
+];

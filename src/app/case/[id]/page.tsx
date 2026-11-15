@@ -45,7 +45,6 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
   const tools = toolsForCase(openKinds, 4);
   const canSuggest = demo || !!room.viewer?.isAdmin;
   const facts = caseFacts(room);
-  const isCreator = demo || room.viewer?.role === "creator";
   const aiLeads = leads.filter((l) => l.aiSuggested).length;
   const draftedParts = room.sections.filter((s) => s.body.trim() && (s.sourceNote === AI_DRAFT_LABEL || s.sourceNote?.startsWith("From the family"))).length;
   // The strip is for day one: it goes away once a person has checked any part of the brief.
@@ -74,7 +73,7 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
           )}
         </div>
         <div className="flex flex-none flex-col items-end gap-3">
-          {isCreator && <ShareCaseButton caseId={room.id} publicPreview={!!room.publicPreview} demo={demo} />}
+          <ShareCaseButton caseId={room.id} publicPreview={!!room.publicPreview} demo={demo} />
           {room.visitInDays !== null && (
             <div className="text-right">
               <strong className="block font-display text-[40px] leading-none font-medium">

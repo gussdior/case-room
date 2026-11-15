@@ -72,7 +72,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
 
   const { data: c } = await supabase
     .from("cases")
-    .select("id, goal, summary, visit_date, join_mode, is_sample, created_by, listed, cancer_type, public_goal, cancer_stage, public_preview, preview_show_visit, age_range, current_treatment")
+    .select("id, goal, summary, visit_date, join_mode, is_sample, created_by, listed, cancer_type, public_goal, cancer_stage, public_preview, preview_show_visit, age_range, current_treatment, ai_links_allowed")
     .eq("id", id)
     .maybeSingle();
 
@@ -232,6 +232,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
     cancerStage: c.cancer_stage ?? null,
     publicPreview: !!c.public_preview,
     previewShowVisit: c.preview_show_visit !== false,
+    aiLinksAllowed: c.ai_links_allowed !== false,
     ageRange: (c.age_range as CaseRoom["ageRange"]) ?? null,
     currentTreatment: c.current_treatment ?? null,
     coApproverId: members.find((m) => m.role === "co_approver" && m.status === "approved")?.id,

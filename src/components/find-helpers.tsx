@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { setPosted, turnOnPreview } from "@/app/share-actions";
+import { CopyButton } from "@/components/copy-button";
 import { EXPERTISE_TONE } from "@/components/ui";
-import { EXPERTISE_LABEL, type Expertise } from "@/lib/types";
+import { EXPERTISE_LABEL, SCAM_WARNING, type Expertise } from "@/lib/types";
 
 export type HelperPlace = {
   id: string;
@@ -16,35 +17,12 @@ export type HelperPlace = {
   community: boolean;
   post: string;
   posted: boolean;
+  /** A Reddit text post: no link in the body, the link goes in a separate comment. */
+  reddit?: boolean;
+  comment?: string | null;
 };
 
 const STEPS = ["Who it's for", "Add documents", "Check the draft", "Privacy check", "Open the case", "Find your helpers"];
-
-async function copy(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function CopyButton({ text, label, primary, disabled }: { text: string; label: string; primary?: boolean; disabled?: boolean }) {
-  const [done, setDone] = useState<"ok" | "fail" | null>(null);
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      className={`btn btn-sm ${primary ? "btn-mark" : "btn-secondary"}`}
-      onClick={async () => {
-        setDone((await copy(text)) ? "ok" : "fail");
-        setTimeout(() => setDone(null), 2000);
-      }}
-    >
-      <span aria-live="polite">{done === "ok" ? "Copied" : done === "fail" ? "Copy failed, select the text" : label}</span>
-    </button>
-  );
-}
 
 function PlaceCard({ p, caseId, link, demo }: { p: HelperPlace; caseId: string; link: string; demo: boolean }) {
   const [posted, setPostedState] = useState(p.posted);
@@ -63,12 +41,35 @@ function PlaceCard({ p, caseId, link, demo }: { p: HelperPlace; caseId: string; 
         )}
       </div>
       {p.why && <p className="mt-1 mb-3 text-sm text-muted">{p.why}</p>}
+      {p.reddit && (
+        <ul className="mb-3 list-disc space-y-1 rounded-[10px] bg-brand-soft py-2.5 pr-3 pl-7 text-[13px] text-brand-dark">
+          <li>Read the subreddit rules first. Many remove posts that carry a link.</li>
+          <li>Use your own account. New accounts often get removed.</li>
+          <li>Do not name the patient.</li>
+          <li>Expect scam messages. Real helpers never ask for money.</li>
+        </ul>
+      )}
+      {p.reddit && <h3 className="mb-1 text-[13px] font-semibold text-muted">The post, with no link in it</h3>}
       <p className="rounded-[10px] border-l-[3px] border-mark bg-[#f6f7f6] px-4 py-3.5 font-display text-base leading-relaxed whitespace-pre-line text-ink-2">
         {p.post}
       </p>
+      {p.reddit && p.comment && (
+        <>
+          <h3 className="mt-3 mb-1 text-[13px] font-semibold text-muted">
+            A comment with the link, only if someone asks or the subreddit allows links
+          </h3>
+          <p className="rounded-[10px] border-l-[3px] border-line-2 bg-[#f6f7f6] px-4 py-3 font-display text-[15px] leading-relaxed whitespace-pre-line break-words text-ink-2">
+            {p.comment}
+          </p>
+        </>
+      )}
       <div className="mt-3 flex flex-wrap items-center gap-2.5">
-        <CopyButton text={p.post} label={people ? "Copy message" : "Copy post"} primary />
-        {!people && <CopyButton text={link} label="Copy link only" />}
+        <CopyButton text={p.post} label={people ? "Copy message" : "Copy post"} className="btn btn-sm btn-mark" />
+        {p.reddit && p.comment ? (
+          <CopyButton text={p.comment} label="Copy comment" />
+        ) : (
+          !people && <CopyButton text={link} label="Copy link only" />
+        )}
         <label htmlFor={id} className="ml-auto inline-flex min-h-11 cursor-pointer items-center gap-2 text-[13px] font-semibold">
           <input
             id={id}
@@ -90,7 +91,7 @@ function PlaceCard({ p, caseId, link, demo }: { p: HelperPlace; caseId: string; 
           {people ? "I sent it" : "I posted here"}
         </label>
       </div>
-      {p.community && (
+      {p.community && !p.reddit && (
         <p className="mt-2.5 rounded-[10px] bg-brand-soft px-3 py-2.5 text-[13px] text-brand-dark">
           Many Reddit groups remove posts that lead with a link. Read the group rules first. If links aren&apos;t allowed, post
           without it and share the link in a comment when someone asks.
@@ -108,6 +109,7 @@ export function FindHelpers({
   previewOn,
   fresh,
   stats,
+  tabs,
 }: {
   caseId: string;
   demo: boolean;
@@ -117,6 +119,8 @@ export function FindHelpers({
   /** Set right after the case opens: "docs" for the documents flow, "manual" for write it myself. */
   fresh: "docs" | "manual" | null;
   stats: { posted: number; asked: number };
+  /** The "With people" and "With an AI" tabs, shown above the heading. */
+  tabs?: ReactNode;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -184,6 +188,7 @@ export function FindHelpers({
       )}
 
       <section aria-labelledby="helpers-h" className="min-w-0">
+        {tabs}
         <h1 id="helpers-h" className="font-display text-[34px] leading-[1.1] font-medium tracking-[-0.015em] sm:text-[40px]">
           Find your helpers
         </h1>
@@ -272,6 +277,7 @@ export function FindHelpers({
             <li>Never send medical records outside Case Room.</li>
             <li>Send every helper through &quot;Ask to join&quot; so you can review them.</li>
             <li>Posting from your own account can identify the patient even without a name. Ask them first.</li>
+            <li>{SCAM_WARNING}</li>
           </ul>
         </section>
         <section aria-labelledby="track-h" className="rounded-[14px] border border-line bg-white px-5 py-[18px]">
