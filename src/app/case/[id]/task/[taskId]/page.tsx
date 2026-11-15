@@ -68,7 +68,14 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
   const lead = task.leadId ? leads.find((l) => l.id === task.leadId) : undefined;
   const initial: AiTurn[] = demo
     ? SAMPLE_AI
-    : saved.map((m) => ({ id: m.id, role: m.role, content: m.content, sources: m.sources, mine: m.userId === v?.id }));
+    : saved.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        sources: m.sources,
+        mine: m.userId === v?.id,
+        unverified: m.role === "assistant" && !m.verified,
+      }));
 
   return (
     <div className="flex flex-col">
@@ -186,7 +193,7 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
                 {demo ? (
                   <WorkForm demo updating={false} />
                 ) : (
-                  <WorkForm action={submitWork.bind(null, room.id, task.id)} updating={task.status === "submitted"} />
+                  <WorkForm caseId={room.id} action={submitWork.bind(null, room.id, task.id)} updating={task.status === "submitted"} />
                 )}
               </>
             ) : (

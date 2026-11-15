@@ -15,7 +15,17 @@ const toList = (s: string) =>
 /** Write up the work, check every source, then submit for a second person to check. */
 const demoAction: FormAction = async () => ({ error: "Sample case: submitting works on real cases once you sign in." });
 
-export function WorkForm({ action, updating, demo }: { action?: FormAction; updating: boolean; demo?: boolean }) {
+export function WorkForm({
+  action,
+  updating,
+  demo,
+  caseId,
+}: {
+  action?: FormAction;
+  updating: boolean;
+  demo?: boolean;
+  caseId?: string;
+}) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(action ?? demoAction, undefined);
   const [body, setBody] = useState("");
   const [sources, setSources] = useState("");
@@ -69,7 +79,7 @@ export function WorkForm({ action, updating, demo }: { action?: FormAction; upda
         const res = await fetch("/api/ai/check-sources", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ urls: list }),
+          body: JSON.stringify({ urls: list, caseId }),
         });
         const data = (await res.json()) as { results?: Check[]; error?: string };
         setChecks(data.results ?? list.map((url) => ({ url, ok: false, note: data.error ?? "Couldn't check this link." })));

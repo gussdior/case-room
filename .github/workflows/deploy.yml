@@ -26,10 +26,11 @@ jobs:
           if [ -z "$VERCEL_TOKEN" ]; then
             echo "Add the VERCEL_TOKEN repository secret first." && exit 1
           fi
+      # Pinned so a new Vercel CLI release never runs with the deploy token unreviewed. Bump on purpose.
       - name: Deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          npx --yes vercel@latest deploy --prod --yes \
+          npx --yes vercel@65.16.0 deploy --prod --yes \
             --token "$VERCEL_TOKEN" \
             --scope sksjjs-projects

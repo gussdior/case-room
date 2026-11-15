@@ -278,6 +278,8 @@ export type AiRun = {
   check: SourceCheck;
   reuseCount: number;
   createdAt: string; // already "time ago"
+  /** Written by the server itself, so the AI label and the source check can be trusted. */
+  verified: boolean;
 };
 
 export type Lead = {

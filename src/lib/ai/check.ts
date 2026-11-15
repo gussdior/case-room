@@ -1,5 +1,43 @@
 import "server-only";
+import { lookup } from "node:dns/promises";
+import { BlockList, isIP } from "node:net";
 import { NCT_RE } from "./tools";
+
+// Private, loopback, link local, cloud metadata and other non public ranges. No request goes to these.
+const BLOCKED = new BlockList();
+for (const [net, bits] of [
+  ["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8], ["169.254.0.0", 16], ["172.16.0.0", 12],
+  ["192.0.0.0", 24], ["192.0.2.0", 24], ["192.88.99.0", 24], ["192.168.0.0", 16], ["198.18.0.0", 15],
+  ["198.51.100.0", 24], ["203.0.113.0", 24], ["224.0.0.0", 4], ["240.0.0.0", 4],
+] as const)
+  BLOCKED.addSubnet(net, bits, "ipv4");
+for (const [net, bits] of [
+  ["::", 128], ["::1", 128], ["::ffff:0:0", 96], ["64:ff9b::", 96], ["100::", 64], ["2001:db8::", 32],
+  ["fc00::", 7], ["fe80::", 10], ["ff00::", 8],
+] as const)
+  BLOCKED.addSubnet(net, bits, "ipv6");
+
+function blockedAddress(address: string): boolean {
+  const family = isIP(address);
+  if (family === 4) return BLOCKED.check(address, "ipv4");
+  if (family === 6) {
+    // IPv4 mapped IPv6 (::ffff:10.0.0.1) is checked as the IPv4 address it points to.
+    const mapped = address.toLowerCase().match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (mapped) return BLOCKED.check(mapped[1], "ipv4");
+    return BLOCKED.check(address, "ipv6");
+  }
+  return true;
+}
+
+/** True only when every address the name resolves to is a public internet address. */
+async function resolvesPublic(host: string): Promise<boolean> {
+  try {
+    const all = await lookup(host, { all: true, verbatim: true });
+    return all.length > 0 && all.every((a) => !blockedAddress(a.address));
+  } catch {
+    return false;
+  }
+}
 
 const OPEN = new Set(["RECRUITING", "NOT_YET_RECRUITING", "ENROLLING_BY_INVITATION", "AVAILABLE"]);
 
@@ -42,6 +80,8 @@ async function checkTrial(url: string, id: string): Promise<Check> {
 async function checkLink(url: string): Promise<Check> {
   const u = publicHttps(url);
   if (!u) return { url, ok: false, note: "This isn't a public web link." };
+  // Redirects are not followed (redirect: "manual"), so this check covers the only address we connect to.
+  if (!(await resolvesPublic(u.hostname))) return { url, ok: false, note: "This isn't a public web link." };
   const attempt = (method: "HEAD" | "GET") =>
     fetch(u, {
       method,

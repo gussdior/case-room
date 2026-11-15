@@ -43,6 +43,7 @@ export async function saveRun(
         sources: run.sources,
         source_check: run.check,
         scrubbed: true,
+        written_by_server: true,
       })
       .select("id")
       .single();
@@ -80,7 +81,7 @@ export async function saveTaskExchange(
     if (q.error) return false;
     const a = await svc
       .from("ai_messages")
-      .insert({ task_id: taskId, user_id: userId, role: "assistant", content: answer.slice(0, 20000), sources });
+      .insert({ task_id: taskId, user_id: userId, role: "assistant", content: answer.slice(0, 20000), sources, written_by_server: true });
     return !a.error;
   }
   const { error } = await supabase.rpc("save_ai_exchange", { t: taskId, question, answer, sources });

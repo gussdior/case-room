@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { UUID_RE } from "@/lib/time";
 import { readDocument } from "@/lib/drafts/ai";
+import { aiLimit } from "@/lib/ai/limits";
 import { DOC_COLUMNS, toDoc } from "@/lib/drafts/db";
 
 export const maxDuration = 300;
@@ -49,6 +50,8 @@ export async function POST(req: Request, ctx: RouteContext<"/api/drafts/[id]/rea
   }
   if (!process.env.ANTHROPIC_API_KEY)
     return json(503, { error: "The AI reader isn't switched on yet. The site owner needs to add an ANTHROPIC_API_KEY." });
+  const limited = await aiLimit(supabase, "read_document");
+  if (limited) return limited;
 
   await save({ status: "reading", note: null });
   const { data: blob, error: dlError } = await supabase.storage.from("case-docs").download(row.storage_path);

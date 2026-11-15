@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { UUID_RE } from "@/lib/time";
 import { composeDraft } from "@/lib/drafts/ai";
 import { DRAFT_COLUMNS, loadDraft, toDraft } from "@/lib/drafts/db";
+import { aiLimit } from "@/lib/ai/limits";
 import type { IdType } from "@/lib/drafts/types";
 
 export const maxDuration = 300;
@@ -26,6 +27,8 @@ export async function POST(_: Request, ctx: RouteContext<"/api/drafts/[id]/compo
   if (read.length === 0) return json(400, { error: "Add at least one document the AI could read." });
   if (!process.env.ANTHROPIC_API_KEY)
     return json(503, { error: "The AI writer isn't switched on yet. The site owner needs to add an ANTHROPIC_API_KEY." });
+  const limited = await aiLimit(supabase, "compose");
+  if (limited) return limited;
 
   try {
     const result = await composeDraft(

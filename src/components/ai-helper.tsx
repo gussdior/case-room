@@ -4,9 +4,18 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { postMessage } from "@/app/case-actions";
 import { onReusePrompt } from "./run-actions";
+import { safeHref } from "@/lib/safe-href";
 import type { Source } from "@/lib/types";
 
-export type AiTurn = { id: string; role: "user" | "assistant"; content: string; sources: Source[]; mine?: boolean };
+export type AiTurn = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sources: Source[];
+  mine?: boolean;
+  /** Saved without the server check, so it may not really be from the built in AI. */
+  unverified?: boolean;
+};
 
 const ADD_EVENT = "caseroom:add-to-work";
 export type AddToWorkDetail = { text: string; sources: string[] };
@@ -41,7 +50,7 @@ function Answer({ text, sources, streaming }: { text: string; sources: Source[];
     parts.push(
       <sup key={`${m.index}-${url}`}>
         <a
-          href={url}
+          href={safeHref(url)}
           target="_blank"
           rel="noopener noreferrer nofollow"
           title={src?.title ?? url}
@@ -69,7 +78,7 @@ function SourceChips({ sources }: { sources: Source[] }) {
       {sources.map((s) => (
         <li key={s.url}>
           <a
-            href={s.url}
+            href={safeHref(s.url)}
             target="_blank"
             rel="noopener noreferrer nofollow"
             className="flex items-center gap-2 rounded-[10px] border border-line px-3 py-2 text-[13px] text-ink no-underline transition-colors hover:border-brand-line hover:bg-brand-tint hover:text-ink"
@@ -282,6 +291,9 @@ export function AiHelper({
             </div>
           ) : (
             <div key={t.id} className="fade-in">
+              {t.unverified && (
+                <p className="mb-1 text-xs font-semibold text-muted">Not verified: saved without the server check</p>
+              )}
               <Answer text={t.content} sources={t.sources} streaming={busy && i === turns.length - 1} />
               <SourceChips sources={t.sources} />
               {!(busy && i === turns.length - 1) && t.content && (

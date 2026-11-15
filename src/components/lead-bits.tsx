@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AI_TOOL_LABEL, LEAD_STATUS_LABEL, roleLabel, type AiRun, type Lead, type LeadStatus, type Member } from "@/lib/types";
 import { LeadCardActions } from "./lead-card-actions";
 import { RunActions } from "./run-actions";
+import { safeHref } from "@/lib/safe-href";
 import { Avatar, ExpertiseBadge, PersonLink } from "./ui";
 
 export const STATUS_TONE: Record<LeadStatus, string> = {
@@ -113,6 +114,9 @@ export function LeadCard({
 }
 
 function CheckLine({ run }: { run: AiRun }) {
+  // Only runs the server wrote itself can show a source check. Anything else could have been typed in by hand.
+  if (!run.verified)
+    return <span className="text-xs font-semibold text-muted">Not verified: saved without the server check</span>;
   const failed = Number(run.check.failed) || 0;
   const ok = Number(run.check.ok) || 0;
   if (failed > 0)
@@ -152,8 +156,9 @@ export function RunItem({
   first?: boolean;
 }) {
   const who = members.find((m) => m.id === run.userId);
-  const failedLinks = (run.check.results ?? []).filter((r) => !r.ok);
-  const toolName = run.tool === "other" && run.toolOther ? run.toolOther : AI_TOOL_LABEL[run.tool];
+  const failedLinks = run.verified ? (run.check.results ?? []).filter((r) => !r.ok) : [];
+  const baseName = run.tool === "other" && run.toolOther ? run.toolOther : AI_TOOL_LABEL[run.tool];
+  const toolName = run.tool === "case_room_ai" && !run.verified ? `${baseName}, not verified` : baseName;
   return (
     <article className={`py-3.5 ${first ? "" : "border-t border-line"}`}>
       <div className="flex flex-wrap items-center gap-2 text-[13px]">
@@ -176,7 +181,7 @@ export function RunItem({
           {run.sources.slice(0, 6).map((s, n) => (
             <li key={s.url}>
               <a
-                href={s.url}
+                href={safeHref(s.url)}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
                 className="inline-flex rounded-full border border-line px-2.5 py-1 text-xs no-underline transition-colors hover:border-brand-line hover:bg-brand-tint"

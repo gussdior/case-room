@@ -81,14 +81,20 @@ The case page is now **Leads**: ideas the team is checking (a trial, an existing
 - **Suggested leads**: `POST /api/case/[id]/suggest-leads` (case admins). Runs automatically right after a case opens from documents.
 - **Prompts that worked**: `top_prompts(lead)` returns this lead's most reused prompts, then well reused, scrubbed prompts from leads of the same kind in other cases (prompt text only).
 
-### Closing the "fake AI answer" gap: add `SUPABASE_SERVICE_ROLE_KEY`
+### Verified AI answers: add `SUPABASE_SERVICE_ROLE_KEY`
 
-Without this key, built in AI answers and checked pasted runs are saved through database functions (`save_ai_run`, `save_ai_exchange`) that any member could call directly to plant text labeled as an AI answer or a "sources checked" badge. With the key set in Vercel, the server writes these rows itself. The functions still exist, so after adding the key you can also revoke them:
+Only rows the server writes with the service key are marked `written_by_server`. A database trigger forces that flag to false for every other write, so nobody can plant a "Case Room AI" answer or a "sources checked" badge that shows as verified (migration 0016).
+
+Without the key, AI answers and pasted runs still save (through `save_ai_run` and `save_ai_exchange`), but the app shows them as "Not verified: saved without the server check" and hides source check results. Add the key in Vercel to get verified answers back. After that you can also revoke the fallback functions:
 
 ```sql
 revoke execute on function public.save_ai_run(uuid, uuid, uuid, ai_tool, text, text, text, jsonb, jsonb) from authenticated;
 revoke execute on function public.save_ai_exchange(uuid, text, text, jsonb) from authenticated;
 ```
+
+### AI cost limits
+
+Every AI route counts calls per person per day in `ai_usage` (see `src/lib/ai/limits.ts` for the limits). Over the limit, people see "Daily AI limit reached. It resets tomorrow." Set `AI_DAILY_GLOBAL_CAP` in Vercel to also pause the AI for everyone after that many calls in a day. Keep the Anthropic spend limit as the last backstop.
 
 The key bypasses all row level security. Keep it server only: never prefix it with `NEXT_PUBLIC_`.
 

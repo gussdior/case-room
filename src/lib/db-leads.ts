@@ -4,7 +4,7 @@ import { SAMPLE_CASE, SAMPLE_LEADS, SAMPLE_PROMPTS, SAMPLE_RUNS } from "./sample
 import { timeAgo, UUID_RE } from "./time";
 import type { AiRun, AiTool, Expertise, Lead, LeadKind, LeadStatus, Source, SourceCheck } from "./types";
 
-const RUN_COLS = "id, lead_id, task_id, user_id, tool, tool_other, prompt, result, sources, source_check, reuse_count, created_at, leads(title)";
+const RUN_COLS = "id, lead_id, task_id, user_id, tool, tool_other, prompt, result, sources, source_check, reuse_count, created_at, written_by_server, leads(title)";
 
 type RunRow = {
   id: string;
@@ -19,6 +19,7 @@ type RunRow = {
   source_check: unknown;
   reuse_count: number;
   created_at: string;
+  written_by_server?: boolean | null;
   leads: { title?: string } | { title?: string }[] | null;
 };
 
@@ -37,6 +38,7 @@ function toRun(r: RunRow): AiRun {
     sources: Array.isArray(r.sources) ? (r.sources as Source[]) : [],
     check: (r.source_check ?? {}) as SourceCheck,
     reuseCount: r.reuse_count,
+    verified: !!r.written_by_server,
     createdAt: timeAgo(r.created_at),
   };
 }
@@ -54,7 +56,7 @@ export async function loadLeads(caseId: string): Promise<Lead[]> {
       .from("leads")
       .select("id, title, idea, kind, status, conditions, next_step, next_step_expertise, ai_suggested, ruled_out_reason, created_by, updated_at")
       .eq("case_id", caseId),
-    supabase.from("ai_runs").select("lead_id, user_id, source_check").eq("case_id", caseId).not("lead_id", "is", null).limit(2000),
+    supabase.from("ai_runs").select("lead_id, user_id, source_check, written_by_server").eq("case_id", caseId).not("lead_id", "is", null).limit(2000),
     supabase.from("tasks").select("lead_id, owner_id").eq("case_id", caseId).not("lead_id", "is", null),
     supabase.from("lead_members").select("lead_id, user_id, leads!inner(case_id)").eq("leads.case_id", caseId),
   ]);
@@ -84,7 +86,7 @@ export async function loadLeads(caseId: string): Promise<Lead[]> {
         ruledOutReason: l.ruled_out_reason,
         createdBy: l.created_by,
         runCount: mine.length,
-        checkedSources: mine.reduce((n, r) => n + (Number((r.source_check as SourceCheck)?.ok) || 0), 0),
+        checkedSources: mine.reduce((n, r) => n + (r.written_by_server ? Number((r.source_check as SourceCheck)?.ok) || 0 : 0), 0),
         people,
         updatedAt: timeAgo(l.updated_at),
         _sort: l.updated_at as string,

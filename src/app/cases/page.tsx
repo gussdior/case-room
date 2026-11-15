@@ -15,7 +15,9 @@ const ROLE: Record<string, string> = {
 };
 
 export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
-  const notice = (await searchParams).deleted === "case";
+  const params = await searchParams;
+  const notice = params.deleted === "case";
+  const filesPending = params.files === "pending";
   const viewer = await requireViewer("/cases");
   const cases = await loadMyCases();
 
@@ -26,6 +28,11 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
         {notice && (
           <p role="status" className="mt-6 rounded-[10px] bg-ok-soft px-4 py-3 text-sm text-ok">
             The case was deleted.
+          </p>
+        )}
+        {notice && filesPending && (
+          <p role="alert" className="rounded-[10px] bg-bad-soft px-4 py-3 text-sm text-bad">
+            Some uploaded files could not be removed yet. Write to us from the contact link and we will remove them by hand.
           </p>
         )}
         <div className="flex flex-wrap items-end gap-4">

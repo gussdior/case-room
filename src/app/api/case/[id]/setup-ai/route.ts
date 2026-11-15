@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { draftBrief } from "@/lib/ai/draft-brief";
 import { suggestLeads } from "@/lib/ai/suggest-leads";
 import { createClient } from "@/lib/supabase/server";
+import { aiLimit } from "@/lib/ai/limits";
 import { UUID_RE } from "@/lib/time";
 
 export const maxDuration = 240;
@@ -20,6 +21,8 @@ export async function POST(_: Request, ctx: RouteContext<"/api/case/[id]/setup-a
     return Response.json({ error: "Only the case creator or co approver can do this." }, { status: 403 });
   if (!process.env.ANTHROPIC_API_KEY)
     return Response.json({ error: "The AI isn't switched on yet. The site owner needs to add the AI key." }, { status: 503 });
+  const limited = await aiLimit(supabase, "setup_ai");
+  if (limited) return limited;
 
   const { count } = await supabase.from("leads").select("id", { count: "exact", head: true }).eq("case_id", id).eq("ai_suggested", true);
   const [leads, brief] = await Promise.all([

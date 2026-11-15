@@ -563,6 +563,7 @@ export const SAMPLE_RUNS: AiRun[] = [
     sources: [],
     check: { ok: 3, failed: 0 },
     reuseCount: 2,
+    verified: true,
     createdAt: "8 min ago",
   },
   {
@@ -578,6 +579,7 @@ export const SAMPLE_RUNS: AiRun[] = [
     sources: [],
     check: { ok: 2, failed: 1, results: [{ url: "https://example.org/old-tool", ok: false, note: "This page doesn't exist anymore." }] },
     reuseCount: 4,
+    verified: true,
     createdAt: "1 h ago",
   },
   {
@@ -593,6 +595,7 @@ export const SAMPLE_RUNS: AiRun[] = [
     sources: [],
     check: { ok: 2, failed: 0 },
     reuseCount: 1,
+    verified: true,
     createdAt: "3 h ago",
   },
   {
@@ -608,6 +611,7 @@ export const SAMPLE_RUNS: AiRun[] = [
     sources: [],
     check: { ok: 2, failed: 0 },
     reuseCount: 0,
+    verified: true,
     createdAt: "5 days ago",
   },
 ];

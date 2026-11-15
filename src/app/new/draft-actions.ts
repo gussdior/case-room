@@ -218,8 +218,12 @@ async function removeFiles(id: string) {
   const { data: docs } = await supabase.from("case_documents").select("id, storage_path").eq("draft_id", id);
   const paths = (docs ?? []).map((x) => x.storage_path as string);
   if (paths.length) {
-    const { error } = await supabase.storage.from("case-docs").remove(paths);
-    if (error) return false;
+    let { error } = await supabase.storage.from("case-docs").remove(paths);
+    if (error) ({ error } = await supabase.storage.from("case-docs").remove(paths));
+    if (error) {
+      console.error("Could not remove draft files after two tries", { draftId: id, message: error.message });
+      return false;
+    }
   }
   await supabase.from("case_documents").delete().eq("draft_id", id);
   return true;

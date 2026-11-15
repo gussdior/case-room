@@ -40,7 +40,9 @@ const RULES = [
 const fmt = new Intl.NumberFormat("en-US");
 
 export default async function Home({ searchParams }: PageProps<"/">) {
-  const notice = (await searchParams).account === "deleted";
+  const params = await searchParams;
+  const notice = params.account === "deleted";
+  const filesPending = params.files === "pending";
   const viewer = await getViewer();
   const [cases, stats, matched] = await Promise.all([
     loadPublicCases(6),
@@ -65,6 +67,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         {notice && (
           <p role="status" className="mt-6 rounded-[10px] bg-ok-soft px-4 py-3 text-sm text-ok">
             Your account was deleted. Thank you for helping.
+          </p>
+        )}
+        {notice && filesPending && (
+          <p role="alert" className="mt-3 rounded-[10px] bg-bad-soft px-4 py-3 text-sm text-bad">
+            Some uploaded files could not be removed yet. Write to us from the contact link and we will remove them by hand.
           </p>
         )}
         <section className="grid items-center gap-10 pt-12 pb-10 sm:pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">

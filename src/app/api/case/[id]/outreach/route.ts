@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { writeOutreach } from "@/lib/ai/outreach";
 import { createClient } from "@/lib/supabase/server";
+import { aiLimit } from "@/lib/ai/limits";
 import { UUID_RE } from "@/lib/time";
 
 export const maxDuration = 120;
@@ -19,6 +20,8 @@ export async function POST(_: Request, ctx: RouteContext<"/api/case/[id]/outreac
     return Response.json({ error: "Only the case creator can do this." }, { status: 403 });
   if (!process.env.ANTHROPIC_API_KEY)
     return Response.json({ error: "The AI isn't switched on yet. The site owner needs to add the AI key." }, { status: 503 });
+  const limited = await aiLimit(supabase, "outreach");
+  if (limited) return limited;
 
   const r = await writeOutreach(supabase, id);
   if (!r.places) return Response.json({ error: r.error ?? "Something went wrong. Try again." }, { status: 502 });

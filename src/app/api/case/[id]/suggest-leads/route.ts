@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { suggestLeads } from "@/lib/ai/suggest-leads";
 import { createClient } from "@/lib/supabase/server";
+import { aiLimit } from "@/lib/ai/limits";
 import { UUID_RE } from "@/lib/time";
 
 export const maxDuration = 120;
@@ -21,6 +22,8 @@ export async function POST(_: Request, ctx: RouteContext<"/api/case/[id]/suggest
     .maybeSingle();
   if (!me || me.status !== "approved" || !["creator", "co_approver"].includes(me.role))
     return Response.json({ error: "Only the case creator or co approver can ask for suggested leads." }, { status: 403 });
+  const limited = await aiLimit(supabase, "suggest_leads");
+  if (limited) return limited;
   const r = await suggestLeads(supabase, id, userId);
   if (r.error) return Response.json({ error: r.error }, { status: r.error.includes("key") ? 503 : 400 });
   revalidatePath(`/case/${id}`, "layout");

@@ -3,6 +3,7 @@ import { checkUrls, linksIn, sourcesFromLinks } from "@/lib/ai/check";
 import { saveRun } from "@/lib/ai/runs";
 import { createClient } from "@/lib/supabase/server";
 import { UUID_RE } from "@/lib/time";
+import { aiLimit } from "@/lib/ai/limits";
 import type { AiTool } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -49,6 +50,8 @@ export async function POST(req: Request, ctx: RouteContext<"/api/case/[id]/runs"
   if (leadId && !lead.data) return Response.json({ error: "That lead isn't in this case." }, { status: 400 });
   if (taskId && !task.data) return Response.json({ error: "That task isn't in this case." }, { status: 400 });
 
+  const limited = await aiLimit(supabase, "runs");
+  if (limited) return limited;
   const links = linksIn(result);
   const results = await checkUrls(links);
   const check = { results, ok: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok).length };

@@ -86,7 +86,8 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
     return {
       kind: "teaser",
       id,
-      goal: t.goal,
+      // The goal stays hidden unless the creator turned on the public preview or you already asked to join.
+      goal: t.goal ?? "Private case",
       joinMode: t.join_mode,
       needed: (t.needed ?? []) as Expertise[],
       volunteers: t.volunteers ?? 0,
@@ -273,7 +274,7 @@ export async function loadMyCases(): Promise<MyCase[]> {
     } else if (d.status === "pending") {
       const { data: t } = await supabase.rpc("case_teaser", { c: d.case_id });
       const teaser = Array.isArray(t) ? t[0] : null;
-      if (teaser) out.push({ id: d.case_id, goal: teaser.goal, role: d.role, status: d.status, visitInDays: null });
+      if (teaser) out.push({ id: d.case_id, goal: teaser.goal ?? "Private case", role: d.role, status: d.status, visitInDays: null });
     }
   }
   return out;

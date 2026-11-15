@@ -96,7 +96,16 @@ export async function loadListedCasesForMe(): Promise<ListedCase[]> {
   );
 }
 
-export type AiMessage = { id: string; userId: string; role: "user" | "assistant"; content: string; sources: Source[]; createdAt: string };
+export type AiMessage = {
+  id: string;
+  userId: string;
+  role: "user" | "assistant";
+  content: string;
+  sources: Source[];
+  createdAt: string;
+  /** Written by the server itself, so it really came from the built in AI. */
+  verified: boolean;
+};
 
 /** The task's saved AI chat (everyone in the case can read it, so good prompts get reused). */
 export async function loadAiMessages(taskId: string, limit = 40): Promise<AiMessage[]> {
@@ -104,7 +113,7 @@ export async function loadAiMessages(taskId: string, limit = 40): Promise<AiMess
   const supabase = await createClient();
   const { data } = await supabase
     .from("ai_messages")
-    .select("id, user_id, role, content, sources, created_at")
+    .select("id, user_id, role, content, sources, created_at, written_by_server")
     .eq("task_id", taskId)
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -115,5 +124,6 @@ export async function loadAiMessages(taskId: string, limit = 40): Promise<AiMess
     content: m.content,
     sources: (m.sources as Source[]) ?? [],
     createdAt: m.created_at,
+    verified: !!m.written_by_server,
   }));
 }
