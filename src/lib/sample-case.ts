@@ -1,4 +1,6 @@
 import { AI_DRAFT_LABEL, type AiRun, type CaseRoom, type Expertise, type Finding, type Lead, type Treatment } from "./types";
+import type { PublicQuestion, TeamQuestion } from "./db-questions";
+import type { Teaser } from "./db-case";
 
 // A made up case. No real person's data.
 export const SAMPLE_CASE: CaseRoom = {
@@ -657,3 +659,70 @@ export const SAMPLE_OUTREACH: {
     posted: false,
   },
 ];
+
+/** Questions visitors asked from the sample case's public preview, as the team sees them. */
+export const SAMPLE_VISITOR_QUESTIONS: TeamQuestion[] = [
+  {
+    id: "q-met",
+    body: "Is the new biopsy being tested for MET and HER2? If not, I'd suggest asking about that first.",
+    reply: null,
+    repliedAt: null,
+    repliedByName: null,
+    isPublic: false,
+    createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    askerId: "visitor-m",
+    askerInitial: "M",
+    askerRoleTitle: "Oncology nurse",
+    askerExpertise: "doctor_nurse",
+    askerStatus: null,
+  },
+  {
+    id: "q-ai",
+    body: "I use AI for research every day. What would be most useful for me to do?",
+    reply: 'Try the lead "An existing drug used in a new way". It needs a PubMed search.',
+    repliedAt: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
+    repliedByName: "Priya",
+    isPublic: true,
+    createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    askerId: "visitor-j",
+    askerInitial: "J",
+    askerRoleTitle: null,
+    askerExpertise: "no_medical",
+    askerStatus: null,
+  },
+];
+
+/** What the public sees on the sample preview: answered questions the team chose to show. */
+export const SAMPLE_PUBLIC_QUESTIONS: PublicQuestion[] = [
+  {
+    body: "What would be most useful for someone who uses AI daily?",
+    reply: "Try the lead about existing drugs used in a new way. It needs a PubMed search.",
+  },
+  {
+    body: "Do I need a medical background?",
+    reply: "No. Every medical claim gets checked by a nurse or doctor on the team before it goes in the brief.",
+  },
+];
+
+/** The sample case shown as a signed out visitor would see its public preview. */
+export function samplePreviewTeaser(): Teaser {
+  return {
+    kind: "teaser",
+    id: SAMPLE_CASE.id,
+    goal: SAMPLE_CASE.goal,
+    joinMode: "approve",
+    needed: ["doctor_nurse", "researcher", "insurance_legal"],
+    volunteers: 5,
+    myRequest: null,
+    signedOut: true,
+    preview: {
+      goal: SAMPLE_CASE.goal,
+      cancerType: SAMPLE_CASE.cancerType ?? null,
+      cancerStage: SAMPLE_CASE.cancerStage ?? null,
+      visitInDays: SAMPLE_CASE.visitInDays,
+      needed: ["doctor_nurse", "researcher", "insurance_legal"],
+      helpers: 5,
+      joinMode: "approve",
+    },
+  };
+}

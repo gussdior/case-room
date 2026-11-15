@@ -2,6 +2,20 @@ import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { CaseNav } from "@/components/case-nav";
 import { getRoom, pendingRequests } from "@/lib/data";
+import { SAMPLE_VISITOR_QUESTIONS } from "@/lib/sample-case";
+import { createClient } from "@/lib/supabase/server";
+
+/** Unanswered visitor questions, for the nav. Any approved member can read them. */
+async function unansweredQuestions(caseId: string, demo: boolean): Promise<number> {
+  if (demo) return SAMPLE_VISITOR_QUESTIONS.filter((q) => !q.reply).length;
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("case_questions")
+    .select("id", { count: "exact", head: true })
+    .eq("case_id", caseId)
+    .is("reply", null);
+  return count ?? 0;
+}
 import { CASE_SAFETY_LINE } from "@/lib/types";
 
 export default async function CaseLayout({ children, params }: LayoutProps<"/case/[id]">) {
@@ -10,6 +24,7 @@ export default async function CaseLayout({ children, params }: LayoutProps<"/cas
   if (!loaded) notFound();
   const room = loaded.room;
   const showPeople = room ? room.viewer === null || room.viewer.isAdmin : false;
+  const questionCount = room ? await unansweredQuestions(room.id, room.viewer === null) : 0;
 
   return (
     <>
@@ -23,7 +38,12 @@ export default async function CaseLayout({ children, params }: LayoutProps<"/cas
         }
       >
         {room && (
-          <CaseNav caseId={room.id} pendingCount={showPeople ? pendingRequests(room).length : 0} showPeople={showPeople} />
+          <CaseNav
+            caseId={room.id}
+            pendingCount={showPeople ? pendingRequests(room).length : 0}
+            questionCount={questionCount}
+            showPeople={showPeople}
+          />
         )}
       </AppHeader>
       <main className="mx-auto w-full max-w-[1360px] flex-1 px-4 pt-6 pb-16 sm:px-8 lg:px-12">

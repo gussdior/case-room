@@ -6,10 +6,12 @@ import { usePathname } from "next/navigation";
 export function CaseNav({
   caseId,
   pendingCount,
+  questionCount = 0,
   showPeople,
 }: {
   caseId: string;
   pendingCount: number;
+  questionCount?: number;
   showPeople: boolean;
 }) {
   const pathname = usePathname();
@@ -21,8 +23,8 @@ export function CaseNav({
     { href: `${base}/runs`, label: "AI runs" },
     { href: `${base}/tried`, label: "What we tried" },
     { href: `${base}/doctor`, label: "For the doctor", also: [`${base}/task/`] },
-    { href: peopleHref, label: "People", badge: showPeople ? pendingCount : 0, also: [`${base}/people`, `${base}/leaderboard`] },
-  ] as { href: string; label: string; exact?: boolean; anchor?: boolean; badge?: number; also?: string[] }[];
+    { href: peopleHref, label: "People", badge: peopleBadge(showPeople ? pendingCount : 0, questionCount), also: [`${base}/people`, `${base}/leaderboard`] },
+  ] as { href: string; label: string; exact?: boolean; anchor?: boolean; badge?: string; also?: string[] }[];
   return (
     <nav aria-label="Case" className="flex flex-wrap gap-1">
       {links.map((l) => {
@@ -39,7 +41,7 @@ export function CaseNav({
             {l.label}
             {l.badge ? (
               <span className="flex h-5 items-center justify-center rounded-full bg-mark px-2 text-[11px] font-semibold whitespace-nowrap text-ink">
-                {l.badge} waiting to join
+                {l.badge}
               </span>
             ) : null}
           </Link>
@@ -47,4 +49,13 @@ export function CaseNav({
       })}
     </nav>
   );
+}
+
+/** "3 waiting to join", "2 new questions", or both together. */
+function peopleBadge(waiting: number, questions: number): string | undefined {
+  const q = `${questions} new ${questions === 1 ? "question" : "questions"}`;
+  if (waiting && questions) return `${waiting} waiting, ${q}`;
+  if (waiting) return `${waiting} waiting to join`;
+  if (questions) return q;
+  return undefined;
 }

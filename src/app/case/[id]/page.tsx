@@ -11,6 +11,8 @@ import { SuggestLeadsButton } from "@/components/suggest-leads";
 import { toolsForCase } from "@/lib/ai-tools";
 import { getViewer } from "@/lib/auth";
 import { getRoom, volunteers } from "@/lib/data";
+import { loadMyQuestions, loadPublicQuestions } from "@/lib/db-questions";
+import { SAMPLE_PUBLIC_QUESTIONS, samplePreviewTeaser } from "@/lib/sample-case";
 import { loadLeads, loadRuns } from "@/lib/db-leads";
 import { AI_DRAFT_LABEL, caseFacts } from "@/lib/types";
 
@@ -22,13 +24,20 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
   if (loaded.teaser) {
     const teaser = loaded.teaser;
     if (teaser.signedOut) {
-      return teaser.preview ? <CasePreview teaser={teaser} viewer={null} /> : <PrivateCase id={teaser.id} />;
+      if (!teaser.preview) return <PrivateCase id={teaser.id} />;
+      return <CasePreview teaser={teaser} viewer={null} questions={await loadPublicQuestions(teaser.id)} />;
     }
     const viewer = await getViewer();
     if (!viewer) notFound();
-    return teaser.preview ? <CasePreview teaser={teaser} viewer={viewer} /> : <JoinPanel teaser={teaser} viewer={viewer} />;
+    if (!teaser.preview) return <JoinPanel teaser={teaser} viewer={viewer} />;
+    const [questions, mine] = await Promise.all([loadPublicQuestions(teaser.id), loadMyQuestions(teaser.id, viewer.id)]);
+    return <CasePreview teaser={teaser} viewer={viewer} questions={questions} mine={mine} />;
   }
   const room = loaded.room;
+  // The sample case can show what its public preview looks like.
+  if (room.viewer === null && sp.preview === "1") {
+    return <CasePreview teaser={samplePreviewTeaser()} viewer={null} questions={SAMPLE_PUBLIC_QUESTIONS} demo />;
+  }
   const demo = room.viewer === null;
   const [leads, runs] = await Promise.all([loadLeads(room.id), loadRuns(room.id, { limit: 3 })]);
   const people = volunteers(room).length;

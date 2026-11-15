@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { QuestionsInbox } from "@/components/case-questions";
 import { loadLeaderboard } from "@/lib/db-case";
+import { loadTeamQuestions } from "@/lib/db-questions";
 import { briefProgress, getRoom, leaderboard, memberById } from "@/lib/data";
 
 export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/leaderboard">) {
@@ -29,6 +31,10 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
           reviewsDone: r.reviews_done,
           points: r.points,
         }));
+
+  // Volunteers answer visitor questions here; the creator and co-approver do it on the People page.
+  const showInbox = !!room.viewer && !room.viewer.isAdmin;
+  const questions = showInbox ? await loadTeamQuestions(room.id) : [];
 
   const tasksChecked = rows.reduce((n, r) => n + r.tasksChecked, 0);
   const reviews = rows.reduce((n, r) => n + r.reviewsDone, 0);
@@ -63,6 +69,8 @@ export default async function LeaderboardPage({ params }: PageProps<"/case/[id]/
           <div className="text-[13px] text-line-2">Of the brief filled by the team</div>
         </div>
       </div>
+
+      {showInbox && <QuestionsInbox caseId={room.id} questions={questions} canManage={false} />}
 
       <div className="overflow-x-auto panel px-4 py-2 sm:px-6">
         <table className="w-full min-w-[640px] border-collapse text-sm">

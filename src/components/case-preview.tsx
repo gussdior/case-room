@@ -1,12 +1,27 @@
 import Link from "next/link";
 import type { Viewer } from "@/lib/auth";
 import type { Teaser } from "@/lib/db-case";
+import type { MyQuestion, PublicQuestion } from "@/lib/db-questions";
+import { AskTeamBox } from "./ask-team";
+import { AnsweredQuestions, YourQuestions } from "./case-questions";
 import { JoinAction } from "./join-panel";
 import { Badge, ExpertiseBadge } from "./ui";
 
 
 /** What a shared link shows before the family approves someone. */
-export function CasePreview({ teaser, viewer }: { teaser: Teaser; viewer: Viewer | null }) {
+export function CasePreview({
+  teaser,
+  viewer,
+  questions = [],
+  mine = [],
+  demo = false,
+}: {
+  teaser: Teaser;
+  viewer: Viewer | null;
+  questions?: PublicQuestion[];
+  mine?: MyQuestion[];
+  demo?: boolean;
+}) {
   const p = teaser.preview!;
   const facts = [p.cancerType, p.cancerStage].filter(Boolean).join(". ");
   const next = `/case/${teaser.id}`;
@@ -54,6 +69,10 @@ export function CasePreview({ teaser, viewer }: { teaser: Teaser; viewer: Viewer
             The case details, leads, AI runs, what was tried and the discussion. Everything stays private until then.
           </p>
         </div>
+
+        <AskTeamBox caseId={teaser.id} signedIn={!!viewer} demo={demo} />
+        <YourQuestions questions={mine} />
+        <AnsweredQuestions questions={questions} />
       </section>
 
       {viewer ? (

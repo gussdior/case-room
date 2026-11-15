@@ -8,6 +8,9 @@ import { DemoButton } from "@/components/demo-button";
 import { ActionButton, ActionForm, SubmitButton, inputClass, labelClass } from "@/components/forms";
 import { Avatar, Badge, Card, PersonLink } from "@/components/ui";
 import { approvedMembers, getRoom, leaderboard, memberById, pendingRequests } from "@/lib/data";
+import { QuestionsInbox } from "@/components/case-questions";
+import { loadTeamQuestions } from "@/lib/db-questions";
+import { SAMPLE_VISITOR_QUESTIONS } from "@/lib/sample-case";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/time";
 import { AGE_RANGE_LABEL, AGE_RANGES, EXPERTISE_LABEL, type CaseRoom } from "@/lib/types";
@@ -40,7 +43,10 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
   const approved = approvedMembers(room);
   const stats = new Map(leaderboard(room).map((r) => [r.member.id, r]));
   const coApprover = memberById(room, room.coApproverId);
-  const reports = await loadReports(room);
+  const [reports, questions] = await Promise.all([
+    loadReports(room),
+    demo ? Promise.resolve(SAMPLE_VISITOR_QUESTIONS) : loadTeamQuestions(room.id),
+  ]);
   const volunteers = approved.filter((m) => m.role !== "creator");
 
   return (
@@ -131,6 +137,13 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
               </article>
             ))}
           </Card>
+
+          <QuestionsInbox caseId={room.id} questions={questions} canManage demo={demo} />
+          {demo && (
+            <p className="-mt-2 text-sm text-muted">
+              <Link href={`/case/${room.id}?preview=1`}>See the sample public preview</Link>, where visitors ask these questions.
+            </p>
+          )}
 
           {!demo && reports.length > 0 && (
             <Card label="Reported messages" className="flex flex-col gap-3 border-2 border-bad-line">
