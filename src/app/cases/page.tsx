@@ -14,7 +14,8 @@ const ROLE: Record<string, string> = {
   family: "Family",
 };
 
-export default async function CasesPage() {
+export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
+  const notice = (await searchParams).deleted === "case";
   const viewer = await requireViewer("/cases");
   const cases = await loadMyCases();
 
@@ -22,6 +23,11 @@ export default async function CasesPage() {
     <>
       <AppHeader />
       <main className="mx-auto flex w-full max-w-[1000px] flex-1 flex-col gap-6 px-4 py-10 sm:px-8">
+        {notice && (
+          <p role="status" className="mt-6 rounded-[10px] bg-ok-soft px-4 py-3 text-sm text-ok">
+            The case was deleted.
+          </p>
+        )}
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-1 flex-col gap-1">
             <h1 className="font-display text-[40px] leading-tight font-medium tracking-[-0.01em]">My cases</h1>

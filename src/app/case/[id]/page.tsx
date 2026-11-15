@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CaseAiBar } from "@/components/case-ai-bar";
+import { CasePreview, PrivateCase } from "@/components/case-preview";
 import { JoinPanel } from "@/components/join-panel";
 import { LeadCard, RailHeading, RunItem } from "@/components/lead-bits";
 import { AddLeadForm } from "@/components/lead-forms";
@@ -16,9 +17,13 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
   const loaded = await getRoom(id);
   if (!loaded) notFound();
   if (loaded.teaser) {
+    const teaser = loaded.teaser;
+    if (teaser.signedOut) {
+      return teaser.preview ? <CasePreview teaser={teaser} viewer={null} /> : <PrivateCase id={teaser.id} />;
+    }
     const viewer = await getViewer();
     if (!viewer) notFound();
-    return <JoinPanel teaser={loaded.teaser} viewer={viewer} />;
+    return teaser.preview ? <CasePreview teaser={teaser} viewer={viewer} /> : <JoinPanel teaser={teaser} viewer={viewer} />;
   }
   const room = loaded.room;
   const demo = room.viewer === null;

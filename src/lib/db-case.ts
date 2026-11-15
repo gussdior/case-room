@@ -26,7 +26,41 @@ export type Teaser = {
   needed: Expertise[];
   volunteers: number;
   myRequest: "pending" | "declined" | "removed" | null;
+  /** Present when the creator turned on the public preview. */
+  preview?: CasePreview | null;
+  /** True when nobody is signed in. */
+  signedOut?: boolean;
 };
+
+/** What anyone with a shared link may see, only when the creator turned on the public preview. */
+export type CasePreview = {
+  goal: string;
+  cancerType: string | null;
+  cancerStage: string | null;
+  visitInDays: number | null;
+  needed: Expertise[];
+  helpers: number;
+  joinMode: "approve" | "invite_only";
+};
+
+/** Public preview of a case. Works signed out. Null if the creator has not turned it on. */
+export async function loadPreview(id: string): Promise<CasePreview | null> {
+  if (!UUID_RE.test(id)) return null;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("case_preview", { c: id });
+  if (error) return null;
+  const p = Array.isArray(data) ? data[0] : null;
+  if (!p) return null;
+  return {
+    goal: p.goal,
+    cancerType: p.cancer_type ?? null,
+    cancerStage: p.cancer_stage ?? null,
+    visitInDays: typeof p.visit_in_days === "number" ? p.visit_in_days : null,
+    needed: (p.needed ?? []) as Expertise[],
+    helpers: p.helpers ?? 0,
+    joinMode: p.join_mode,
+  };
+}
 
 /** Loads a real case the signed in user is an approved member of.
  *  Returns a teaser (goal and skills needed) for non-members, or null if it doesn't exist. */
@@ -38,7 +72,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
 
   const { data: c } = await supabase
     .from("cases")
-    .select("id, goal, summary, visit_date, join_mode, is_sample, created_by, listed, cancer_type, public_goal, cancer_stage")
+    .select("id, goal, summary, visit_date, join_mode, is_sample, created_by, listed, cancer_type, public_goal, cancer_stage, public_preview, preview_show_visit")
     .eq("id", id)
     .maybeSingle();
 
@@ -57,6 +91,7 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
       needed: (t.needed ?? []) as Expertise[],
       volunteers: t.volunteers ?? 0,
       myRequest: (mine?.status as Teaser["myRequest"]) ?? null,
+      preview: await loadPreview(id),
     };
   }
 
@@ -193,6 +228,8 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
     cancerType: c.cancer_type ?? null,
     publicGoal: c.public_goal ?? null,
     cancerStage: c.cancer_stage ?? null,
+    publicPreview: !!c.public_preview,
+    previewShowVisit: c.preview_show_visit !== false,
     coApproverId: members.find((m) => m.role === "co_approver" && m.status === "approved")?.id,
     creatorId: c.created_by,
     sections,

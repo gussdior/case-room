@@ -8,7 +8,7 @@ import { Badge } from "./ui";
 
 const RULES = [
   "Every claim needs a source link.",
-  "Nothing counts until a second person checks it.",
+  "A second person checks every medical claim before it goes to the doctor.",
   "No treatment advice. We prepare questions for the patient's own doctor.",
   "No asking the family for money, and no private contact with the family.",
 ];
@@ -17,7 +17,7 @@ export function JoinPanel({ teaser, viewer }: { teaser: Teaser; viewer: Viewer }
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5">
       <section className="flex flex-col gap-2 rounded-[14px] bg-ink px-6 py-6 text-white">
-        <span className="text-xs font-semibold uppercase tracking-widest text-line-2">Goal</span>
+        <span className="text-xs font-semibold text-line-2">Goal</span>
         <h1 className="font-display text-[34px] leading-tight font-medium">{teaser.goal}</h1>
         <p className="text-sm text-line-2">
           {teaser.volunteers} {teaser.volunteers === 1 ? "person" : "people"} on this case. Case details are shown only
@@ -35,6 +35,15 @@ export function JoinPanel({ teaser, viewer }: { teaser: Teaser; viewer: Viewer }
         )}
       </section>
 
+      <JoinAction teaser={teaser} viewer={viewer} />
+    </div>
+  );
+}
+
+/** Request status, or the form to ask to join. */
+export function JoinAction({ teaser, viewer }: { teaser: Teaser; viewer: Viewer }) {
+  return (
+    <>
       {teaser.myRequest === "pending" ? (
         <div role="status" className="panel p-6 text-sm">
           <Badge tone="warn">Request sent</Badge>
@@ -96,6 +105,6 @@ export function JoinPanel({ teaser, viewer }: { teaser: Teaser; viewer: Viewer }
           <SubmitButton>Send request</SubmitButton>
         </ActionForm>
       )}
-    </div>
+    </>
   );
 }

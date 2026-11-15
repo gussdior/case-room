@@ -9,13 +9,20 @@ export function ListingFields({
   cancerType,
   cancerStage,
   publicGoal,
+  publicPreview,
+  previewShowVisit,
 }: {
   listed: boolean;
   cancerType: string | null;
   cancerStage: string | null;
   publicGoal: string | null;
+  publicPreview: boolean;
+  previewShowVisit: boolean;
 }) {
   const [on, setOn] = useState(listed);
+  const [preview, setPreview] = useState(publicPreview || listed);
+  const [showVisit, setShowVisit] = useState(previewShowVisit);
+  const previewOn = preview || on;
   const [type, setType] = useState(cancerType ?? "");
   const [stage, setStage] = useState(cancerStage ?? "");
   const [goal, setGoal] = useState(publicGoal ?? "");
@@ -23,6 +30,7 @@ export function ListingFields({
   return (
     <>
       <input type="hidden" name="listed_present" value="1" />
+      <input type="hidden" name="had_preview" value={publicPreview ? "1" : ""} />
       <label htmlFor="s-cancer" className={labelClass}>
         Cancer type
       </label>
@@ -47,6 +55,44 @@ export function ListingFields({
         onChange={(e) => setStage(e.target.value)}
         className={inputClass}
       />
+      <div className="flex flex-col gap-3 rounded-[12px] bg-paper p-4">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            name="public_preview"
+            checked={previewOn}
+            disabled={on}
+            onChange={(e) => setPreview(e.target.checked)}
+            className="mt-1 h-4 w-4 flex-none accent-brand"
+          />
+          <span>
+            <span className="block text-[15px] font-semibold">Public preview</span>
+            <span className="block text-[13px] text-muted">
+              Anyone with the link sees the goal, cancer type and stage, skills needed and how many people are helping.
+              {on && " Listed cases always have a public preview."}
+            </span>
+          </span>
+        </label>
+        {on && <input type="hidden" name="public_preview" value="on" />}
+        {previewOn && (
+          <label className="fade-in flex cursor-pointer items-start gap-3 pl-7">
+            <input
+              type="checkbox"
+              name="preview_show_visit"
+              checked={showVisit}
+              onChange={(e) => setShowVisit(e.target.checked)}
+              className="mt-1 h-4 w-4 flex-none accent-brand"
+            />
+            <span>
+              <span className="block text-[15px]">Show days until the doctor visit</span>
+              <span className="block text-[13px] text-muted">
+                In a small community, details together can identify someone. Turn this off if unsure.
+              </span>
+            </span>
+          </label>
+        )}
+        {!previewOn && <input type="hidden" name="preview_show_visit" value={showVisit ? "on" : ""} />}
+      </div>
       <label className="flex cursor-pointer items-start gap-3 rounded-[12px] bg-paper p-4">
         <input
           type="checkbox"
@@ -58,7 +104,8 @@ export function ListingFields({
         <span>
           <span className="block text-[15px] font-semibold">List this case publicly so volunteers can find it</span>
           <span className="block text-[13px] text-muted">
-            It shows on the homepage and matching volunteers get notified. You still approve each person.
+            It shows on the homepage and matching volunteers get notified. This also turns on the public preview. You still
+            approve each person.
           </span>
         </span>
       </label>

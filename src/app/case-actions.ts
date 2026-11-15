@@ -29,6 +29,7 @@ const OUR_ERRORS = [
   "Add a one line public goal before listing the case",
   "Only the case creator can choose a co-approver",
   "Only the case creator can list the case",
+  "Only the case creator can change the public preview",
   "Pick an approved volunteer",
   "Only the case creator or co-approver can pin",
   "Section does not belong to this case",
@@ -137,11 +138,15 @@ export async function updateCaseSettings(caseId: string, _: Result, form: FormDa
           p_cancer_type: cancerType,
           p_public_goal: text(form, "public_goal", 140) || null,
           p_cancer_stage: text(form, "cancer_stage", 40) || null,
+          p_public_preview: form.get("public_preview") === "on" || form.get("listed") === "on",
+          p_preview_show_visit: form.get("preview_show_visit") === "on",
         }
       : { c: caseId, p_goal: goal, p_summary: summary, p_visit: visit, p_join_mode: joinMode },
   );
   if (error) return friendly(error);
   refresh(caseId);
+  if (withListing && form.get("listed") === "on" && form.get("had_preview") !== "1")
+    return { ok: "Saved. Listing the case also turned on the public preview." };
   return { ok: "Saved." };
 }
 

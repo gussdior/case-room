@@ -514,3 +514,29 @@
     box-shadow: 0 0 0 0 rgba(43, 63, 160, 0);
   }
 }
+
+/* Privacy and terms pages: readable serif body, like the brief. */
+@layer components {
+  .legal p,
+  .legal li {
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--color-ink-2);
+  }
+  .legal ul {
+    list-style: disc;
+    padding-left: 22px;
+    margin: 6px 0;
+  }
+  .footer-link {
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .footer-link:hover {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}

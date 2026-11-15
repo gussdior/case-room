@@ -1,15 +1,34 @@
 import "server-only";
 import { cache } from "react";
-import { requireViewer } from "./auth";
-import { loadCase, type Teaser } from "./db-case";
+import { getUserId, requireViewer } from "./auth";
+import { loadCase, loadPreview, type Teaser } from "./db-case";
 import { SAMPLE_CASE } from "./sample-case";
+import { UUID_RE } from "./time";
 import type { CaseRoom, Member, Task } from "./types";
 
 export type Loaded = { room: CaseRoom; teaser?: never } | { teaser: Teaser; room?: never } | null;
 
-/** The public sample case needs no sign in. Real cases need a signed in user with a profile. */
+/** The public sample case needs no sign in. Signed out visitors get the public preview (or a private notice).
+ *  Real cases need a signed in user with a profile. */
 export const getRoom = cache(async (id: string): Promise<Loaded> => {
   if (id === SAMPLE_CASE.id) return { room: SAMPLE_CASE };
+  if (!(await getUserId())) {
+    if (!UUID_RE.test(id)) return null;
+    const preview = await loadPreview(id);
+    return {
+      teaser: {
+        kind: "teaser",
+        id,
+        goal: preview?.goal ?? "",
+        joinMode: preview?.joinMode ?? "approve",
+        needed: preview?.needed ?? [],
+        volunteers: preview?.helpers ?? 0,
+        myRequest: null,
+        preview,
+        signedOut: true,
+      },
+    };
+  }
   await requireViewer(`/case/${id}`);
   const r = await loadCase(id);
   if (!r) return null;

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
+import { deleteAccount } from "@/app/delete-actions";
+import { DeleteZone } from "@/components/delete-zone";
 import { InviteLink } from "@/components/invite-link";
 import { Badge, EXPERTISE_TONE, ExpertiseBadge, btn } from "@/components/ui";
 import { requireViewer } from "@/lib/auth";
@@ -63,6 +65,7 @@ export default async function ProfilePage({ params }: PageProps<"/profile/[id]">
     );
   }
 
+  const created = p.isMe ? (await loadMyCases()).filter((c) => c.role === "creator" && c.status === "approved") : [];
   const myCases = p.isMe ? [] : (await loadMyCases()).filter((c) => (c.role === "creator" || c.role === "co_approver") && c.status === "approved");
   const facts = [p.roleTitle, p.yearsExperience !== null ? `${p.yearsExperience} year${p.yearsExperience === 1 ? "" : "s"}` : null]
     .filter(Boolean)
@@ -218,6 +221,28 @@ export default async function ProfilePage({ params }: PageProps<"/profile/[id]">
             )}
           </section>
         </div>
+
+        {p.isMe && (
+          <div className="mt-12 max-w-[640px]">
+            <DeleteZone title="Delete my account" button="Delete my account" action={deleteAccount}>
+              <p>
+                This removes your profile, your memberships, your private AI chats and any documents you uploaded. It is removed
+                within 30 days, including backups. Work you shared in other people&apos;s cases stays there, shown as &quot;Deleted
+                user&quot;.
+              </p>
+              {created.length > 0 && (
+                <>
+                  <p className="mt-2 font-semibold">These cases you created will be deleted too, for everyone on them:</p>
+                  <ul className="mt-1 list-disc pl-5">
+                    {created.map((c) => (
+                      <li key={c.id}>{c.goal}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </DeleteZone>
+          </div>
+        )}
 
         <p className="mt-12 border-t border-line pt-5 text-[13px] text-muted">
           <strong className="text-ink">Who sees this:</strong> people on a case with {p.isMe ? "you" : p.name}, and case creators

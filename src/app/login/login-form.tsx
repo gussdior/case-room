@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { sendSignInLink, verifyCode } from "@/app/auth-actions";
 import { FormMessage, SubmitButton, inputClass, labelClass } from "@/components/forms";
@@ -53,6 +54,9 @@ export function LoginForm({ next }: { next: string }) {
       <input id="email" name="email" type="email" autoComplete="email" required className={inputClass} />
       <SubmitButton variant="mark">Email me a sign in link</SubmitButton>
       <FormMessage state={state} />
+      <p className="text-[13px] text-muted">
+        By signing in you agree to the <Link href="/terms">terms</Link> and <Link href="/privacy">privacy policy</Link>.
+      </p>
     </form>
   );
 }

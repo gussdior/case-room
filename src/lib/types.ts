@@ -120,6 +120,8 @@ export type CaseRoom = {
   cancerType?: string | null;
   publicGoal?: string | null;
   cancerStage?: string | null;
+  publicPreview?: boolean;
+  previewShowVisit?: boolean;
   coApproverId?: string;
   creatorId?: string;
   sections: Section[];

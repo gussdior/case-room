@@ -91,3 +91,21 @@ revoke execute on function public.save_ai_exchange(uuid, text, text, jsonb) from
 ```
 
 The key bypasses all row level security. Keep it server only: never prefix it with `NEXT_PUBLIC_`.
+
+## Privacy, preview and deleting (Group 1)
+
+- `/privacy` and `/terms` are drafts. Sections tagged "Lawyer review" must be checked before launch, including the
+  30 day deletion promise: Supabase backups roll off on their own schedule (daily backups kept 7 days on Pro, longer on
+  higher plans, point in time recovery if enabled), so the lawyer should confirm the wording matches the plan in use.
+- Footer contact email: set `NEXT_PUBLIC_CONTACT_EMAIL` in Vercel. Without it the footer shows "Contact" linking to the
+  terms page, which says contact details are coming soon.
+- Public preview: `cases.public_preview` and `cases.preview_show_visit`, read through `case_preview(id)` (callable signed
+  out, returns only goal, cancer type and stage, visit days if allowed, skills needed, helper count). Listing a case
+  turns the preview on.
+- Deleting: migration `0012_delete_case_and_account.sql` adds `delete_case` and `delete_my_account`. The database tool
+  asks for confirmation on statements that delete rows, so apply this file once from the Supabase SQL editor. Until then
+  the delete buttons say deleting isn't switched on yet.
+- Deleting an account empties and closes the profile ("Deleted user"), deletes cases they created, their drafts, files,
+  memberships and private AI chats. Work they shared in other cases stays, credited to "Deleted user". Removing the sign
+  in record needs `SUPABASE_SERVICE_ROLE_KEY` (soft delete through the admin API). Without the key the sign in record
+  stays, and signing in again starts a fresh empty profile.

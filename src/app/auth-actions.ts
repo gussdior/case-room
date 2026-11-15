@@ -118,7 +118,7 @@ export async function saveProfile(_: FormState, form: FormData): Promise<FormSta
   const supabase = await createClient();
   const { error } = await supabase
     .from("profiles")
-    .upsert({ id, display_name: name, headline: headline || null, expertise, proof_url: proof, ...extra });
+    .upsert({ id, display_name: name, headline: headline || null, expertise, proof_url: proof, deleted_at: null, ...extra });
   if (error) return { error: "Couldn't save your profile. Try again." };
   redirect(next);
 }

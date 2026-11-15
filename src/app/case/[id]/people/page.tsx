@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { deleteCase } from "@/app/delete-actions";
+import { DeleteZone } from "@/components/delete-zone";
 import { ListingFields } from "@/components/listing-fields";
 import { decideRequest, removeMember, setCoApprover, updateCaseSettings } from "@/app/case-actions";
 import { DemoButton } from "@/components/demo-button";
@@ -221,6 +223,8 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
                     cancerType={room.cancerType ?? null}
                     cancerStage={room.cancerStage ?? null}
                     publicGoal={room.publicGoal ?? null}
+                    publicPreview={!!room.publicPreview}
+                    previewShowVisit={room.previewShowVisit !== false}
                   />
                 )}
                 <SubmitButton className="self-start">Save settings</SubmitButton>
@@ -249,6 +253,15 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
                 </SubmitButton>
               </ActionForm>
             </Card>
+          )}
+
+          {!demo && isCreator && (
+            <DeleteZone title="Delete this case" button="Delete this case" action={deleteCase.bind(null, room.id)}>
+              <p>
+                This deletes the case for everyone: the brief, leads, AI runs, what was tried, messages and any uploaded
+                documents. It is removed within 30 days, including backups. This can&apos;t be undone.
+              </p>
+            </DeleteZone>
           )}
 
           <section aria-label="Declining" className="rounded-[14px] bg-line px-5 py-4 text-xs leading-relaxed text-ink-2">

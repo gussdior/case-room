@@ -28,10 +28,11 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
-    .select("id, display_name, headline, expertise, proof_url")
+    .select("id, display_name, headline, expertise, proof_url, deleted_at")
     .eq("id", id)
     .maybeSingle();
-  if (!data) return null;
+  // A deleted account starts over: no profile until they set one up again.
+  if (!data || data.deleted_at) return null;
   return {
     id: data.id,
     name: data.display_name,

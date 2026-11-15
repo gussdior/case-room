@@ -38,7 +38,8 @@ const RULES = [
 
 const fmt = new Intl.NumberFormat("en-US");
 
-export default async function Home() {
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const notice = (await searchParams).account === "deleted";
   const viewer = await getViewer();
   const [cases, stats, matched] = await Promise.all([
     loadPublicCases(6),
@@ -60,6 +61,11 @@ export default async function Home() {
         </nav>
       </AppHeader>
       <main className="mx-auto flex w-full max-w-[1360px] flex-1 flex-col px-4 pb-20 sm:px-8 lg:px-12">
+        {notice && (
+          <p role="status" className="mt-6 rounded-[10px] bg-ok-soft px-4 py-3 text-sm text-ok">
+            Your account was deleted. Thank you for helping.
+          </p>
+        )}
         <section className="grid items-center gap-10 pt-12 pb-10 sm:pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
           <div>
             <h1 className="font-display text-[46px] leading-[1.02] font-medium tracking-[-0.025em] sm:text-[68px]">
