@@ -8,10 +8,11 @@ import { loadListedCasesForMe } from "@/lib/db-profile";
 import { SAMPLE_PUBLIC_CASE, loadPublicCases, loadPublicStats } from "@/lib/public-cases";
 import { daysUntil } from "@/lib/time";
 import { EXPERTISE_LABEL } from "@/lib/types";
+import { FOUNDER_STORY } from "@/content/founder-story";
 
-const HEADLINE = "Be part of the new wave. Help someone.";
+const HEADLINE = "Be part of the new wave. Help someone with cancer.";
 const SUBTEXT =
-  "AI is speeding up cancer research faster than ever. Case Room puts doctors, researchers and people who know AI on one real case, to find the options that exist today and buy time for the ones coming next.";
+  "AI is speeding up cancer research faster than ever. Case Room puts doctors, researchers and people who know AI on one real case, to find the options that exist today and turn them into clear questions for the patient's own doctor.";
 
 export const metadata: Metadata = {
   title: `Case Room: ${HEADLINE}`,
@@ -71,7 +72,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             <h1 className="font-display text-[46px] leading-[1.02] font-medium tracking-[-0.025em] sm:text-[68px]">
               Be part of the new wave.{" "}
               <span className="hl" data-sweep="true" style={{ animationDelay: "300ms" }}>
-                Help someone.
+                Help someone with cancer.
               </span>
             </h1>
             <p className="mt-6 max-w-[560px] text-lg leading-relaxed text-muted sm:text-[19px]">{SUBTEXT}</p>
@@ -90,8 +91,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               Two years ago, AI could not do real research. Now it reads hundreds of papers, searches every open trial and explains a
               gene report in minutes. Millions of people already use it every day, for someone they love or just out of curiosity.
               Imagine what happens when they work together. You don&apos;t need to be a doctor. If you can ask good questions and check
-              sources, you can help someone get more time. Even 5 in 100 would be more than anyone thought possible before AI.
+              sources, you can help a family walk into the doctor&apos;s office ready.
             </p>
+            {FOUNDER_STORY.trim() && (
+              <p className="mt-4 border-t border-white/15 pt-4 font-display text-[17px] leading-[1.5] text-[#e6e9ee]">
+                {FOUNDER_STORY.trim()}
+              </p>
+            )}
             <Link href="/cases/open" className={`${btn.mark} mt-5`}>
               Join the wave
             </Link>

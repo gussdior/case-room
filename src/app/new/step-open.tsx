@@ -139,7 +139,7 @@ export function StepOpen({ draft, docs }: { draft: Draft; docs: DraftDoc[] }) {
               return;
             }
             const r = await publishDraft(draft.id);
-            if (r.ok) router.push(`/case/${r.caseId}?new=1`);
+            if (r.ok) router.push(`/case/${r.caseId}/share?new=docs`);
             else {
               setError(r.error);
               setBusy(false);

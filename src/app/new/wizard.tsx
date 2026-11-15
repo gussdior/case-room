@@ -9,7 +9,7 @@ import { StepDraft } from "./step-draft";
 import { StepPrivacy } from "./step-privacy";
 import { StepOpen } from "./step-open";
 
-const STEPS = ["Who it's for", "Add documents", "Check the draft", "Privacy check", "Open the case"];
+const STEPS = ["Who it's for", "Add documents", "Check the draft", "Privacy check", "Open the case", "Find your helpers"];
 
 /** How far this draft has got: the furthest step the person can open. */
 function reach(d: Draft | null, docs: DraftDoc[]): number {
@@ -41,7 +41,7 @@ export function Wizard({
 
   return (
     <div className="mx-auto grid w-full max-w-[1360px] gap-8 px-4 pt-8 pb-16 sm:px-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 lg:px-12 lg:pt-10">
-      <nav aria-label={`Start a case, step ${step} of 5`} className="lg:sticky lg:top-6 lg:self-start">
+      <nav aria-label={`Start a case, step ${step} of 6`} className="lg:sticky lg:top-6 lg:self-start">
         <p className="mb-3 text-[13px] text-muted">
           {draft ? "Private draft. Only you can see it." : "Nothing is shared until the last step."}
         </p>

@@ -1,4 +1,4 @@
-import { AI_DRAFT_LABEL, type AiRun, type CaseRoom, type Finding, type Lead, type Treatment } from "./types";
+import { AI_DRAFT_LABEL, type AiRun, type CaseRoom, type Expertise, type Finding, type Lead, type Treatment } from "./types";
 
 // A made up case. No real person's data.
 export const SAMPLE_CASE: CaseRoom = {
@@ -613,4 +613,47 @@ export const SAMPLE_RUNS: AiRun[] = [
 export const SAMPLE_PROMPTS: { prompt: string; uses: number; here: boolean }[] = [
   { prompt: "Which of her mutations are shared by many cancers?", uses: 4, here: true },
   { prompt: "Format this mutation list for a vaccine target tool", uses: 2, here: true },
+];
+
+/** Find your helpers on the sample case. {LINK} becomes the case link. */
+export const SAMPLE_OUTREACH: {
+  id: string;
+  place: string;
+  kind: "patients" | "science" | "clinicians" | "people_you_know" | "other";
+  skill: Expertise;
+  why: string;
+  community: boolean;
+  post: string;
+  posted: boolean;
+}[] = [
+  {
+    id: "o-patients",
+    place: "Lung cancer patient and caregiver groups",
+    kind: "patients",
+    skill: "doctor_nurse",
+    why: "People here know the disease closely, and many are nurses or have a nurse in the family.",
+    community: true,
+    post: "My mom has stage IV lung cancer. Her targeted pill worked for two years and just stopped. Her next doctor visit is in 12 days and we want to walk in with the right questions.\n\nVolunteers and AI are helping us look at trials and options. We need one oncology nurse or doctor to sanity check what we found. About 30 minutes. This is about questions for her doctor, never treatment advice, and nobody is asking for money.\n\nThe case, with no names: {LINK}",
+    posted: false,
+  },
+  {
+    id: "o-science",
+    place: "Science and data communities",
+    kind: "science",
+    skill: "researcher",
+    why: "People who read papers and use AI for research every day, often looking for something meaningful to work on.",
+    community: true,
+    post: "Looking for someone who reads cancer research. A family is preparing for an oncology visit after a targeted drug stopped working (EGFR lung cancer). The team has 5 leads to check against recent papers and open trials, with AI already set up on the case.\n\nEvery finding needs a source and a second check. Nothing goes to the patient as advice, only questions for her doctor.\n\nCase preview: {LINK}",
+    posted: true,
+  },
+  {
+    id: "o-people",
+    place: "Doctors and nurses you know",
+    kind: "people_you_know",
+    skill: "doctor_nurse",
+    why: "A short private message to someone in your own life often works best.",
+    community: false,
+    post: "Hi, could you spare 30 minutes to look over a few questions for my mom's oncologist? A small team found some options and we want a medical eye on them before the visit. Here's the case: {LINK}",
+    posted: false,
+  },
 ];
