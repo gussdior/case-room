@@ -238,6 +238,7 @@ export async function POST(req: Request) {
         }
         send("done", {});
       } catch (e) {
+        console.error("[ai] task failed", e instanceof Anthropic.APIError ? { status: e.status, message: String(e.message).slice(0, 300) } : String(e).slice(0, 300));
         const status = e instanceof Anthropic.APIError ? e.status : undefined;
         send("error", {
           error:

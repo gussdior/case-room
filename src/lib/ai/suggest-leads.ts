@@ -5,6 +5,7 @@ import { buildPack } from "@/lib/case-pack";
 import { scrubDeep } from "@/lib/drafts/scrub";
 import { EXPERTISE_ORDER, LEAD_KINDS, type Expertise, type LeadKind } from "@/lib/types";
 
+import { aiErrorMessage } from "@/lib/ai/errors";
 const MODEL = "claude-sonnet-5-5";
 
 const TOOL: Anthropic.Tool = {
@@ -78,8 +79,8 @@ export async function suggestLeads(supabase: SupabaseClient, caseId: string, use
     });
     const use = msg.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
     leads = ((use?.input as { leads?: SuggestedLead[] } | undefined)?.leads ?? []).slice(0, 6);
-  } catch {
-    return { error: "The AI didn't answer. Try again in a minute." };
+  } catch (err) {
+    return { error: aiErrorMessage(err, "suggest-leads") };
   }
   leads = scrubDeep(leads);
   const { data: existing } = await supabase.from("leads").select("title").eq("case_id", caseId);

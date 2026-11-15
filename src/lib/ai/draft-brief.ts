@@ -5,6 +5,7 @@ import { buildPack } from "@/lib/case-pack";
 import { scrubDeep } from "@/lib/drafts/scrub";
 import { AI_DRAFT_LABEL } from "@/lib/types";
 
+import { aiErrorMessage } from "@/lib/ai/errors";
 const MODEL = "claude-sonnet-5-5";
 
 export const AI_DRAFT_NOTE = AI_DRAFT_LABEL;
@@ -67,8 +68,8 @@ export async function draftBrief(supabase: SupabaseClient, caseId: string): Prom
     });
     const use = msg.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
     out = (use?.input as { sections?: { position: number; body: string }[] } | undefined)?.sections ?? [];
-  } catch {
-    return { error: "The AI didn't answer. Try again in a minute." };
+  } catch (err) {
+    return { error: aiErrorMessage(err, "draft-brief") };
   }
   out = scrubDeep(out);
   const rows = out

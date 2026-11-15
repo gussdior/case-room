@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { scrub } from "@/lib/drafts/scrub";
 import { AGE_RANGE_LABEL, EXPERTISE_LABEL, EXPERTISE_ORDER, type AgeRange, type Expertise } from "@/lib/types";
 
+import { aiErrorMessage } from "@/lib/ai/errors";
 const MODEL = "claude-sonnet-5-5";
 export const LINK_TOKEN = "{LINK}";
 
@@ -142,8 +143,8 @@ export async function writeOutreach(
     const input = use?.input as { places?: Place[]; reddit?: Partial<RedditPost> } | undefined;
     places = (input?.places ?? []).slice(0, 5);
     rawReddit = input?.reddit;
-  } catch {
-    return { error: "The AI didn't answer. Try again in a minute." };
+  } catch (err) {
+    return { error: aiErrorMessage(err, "outreach") };
   }
   const clean = places
     .map((p) => ({

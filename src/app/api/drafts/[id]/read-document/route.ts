@@ -75,6 +75,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/drafts/[id]/rea
     });
     return json(200, { doc });
   } catch (e) {
+    console.error("[ai] read-document failed", e instanceof Anthropic.APIError ? { status: e.status, message: String(e.message).slice(0, 300) } : String(e).slice(0, 300));
     const status = e instanceof Anthropic.APIError ? e.status : undefined;
     const message =
       status === 401

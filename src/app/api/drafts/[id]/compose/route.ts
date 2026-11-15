@@ -72,6 +72,7 @@ export async function POST(_: Request, ctx: RouteContext<"/api/drafts/[id]/compo
     if (error || !data) return json(500, { error: "Couldn't save the draft. Try again." });
     return json(200, { draft: toDraft(data as Parameters<typeof toDraft>[0]) });
   } catch (e) {
+    console.error("[ai] compose failed", e instanceof Anthropic.APIError ? { status: e.status, message: String(e.message).slice(0, 300) } : String(e).slice(0, 300));
     const status = e instanceof Anthropic.APIError ? e.status : undefined;
     return json(502, {
       error:
