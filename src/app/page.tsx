@@ -1,36 +1,167 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
+import { PublicCaseCard } from "@/components/public-case-card";
 import { Chevron, btn } from "@/components/ui";
 import { getViewer } from "@/lib/auth";
 import { loadListedCasesForMe } from "@/lib/db-profile";
+import { SAMPLE_PUBLIC_CASE, loadPublicCases, loadPublicStats } from "@/lib/public-cases";
 import { daysUntil } from "@/lib/time";
 import { EXPERTISE_LABEL } from "@/lib/types";
 
+const HEADLINE = "Be part of the new wave. Help someone.";
+const SUBTEXT =
+  "AI is speeding up cancer research faster than ever. Case Room puts doctors, researchers and people who know AI on one real case, to find the options that exist today and buy time for the ones coming next.";
+
+export const metadata: Metadata = {
+  title: `Case Room: ${HEADLINE}`,
+  description: SUBTEXT,
+  openGraph: { title: HEADLINE, description: SUBTEXT, siteName: "Case Room", type: "website" },
+  twitter: { card: "summary", title: HEADLINE, description: SUBTEXT },
+};
+
 const STEPS = [
-  { title: "The family sets one goal", body: "AI turns it into a brief for the doctor, with clear gaps." },
-  { title: "Each gap is a small task", body: "Doctors, researchers, data people and people with no medical background each see what is theirs." },
-  { title: "Nothing counts until checked", body: "Every claim needs a source. A second person checks it before it enters the brief." },
-  { title: "The family brings questions", body: "The result is questions and options for the patient's own doctor. Never treatment advice." },
+  { title: "A loved one opens the case", body: "Add their documents. AI hides names and drafts the case." },
+  {
+    title: "Kind people ask to join",
+    body: "Everyday people with good hearts help, using the AI they already use. The family says yes.",
+  },
+  { title: "AI checks every step", body: "Every finding needs a source, and AI checks it before it counts." },
+  { title: "The patient walks in informed", body: "Better informed than ever, with clear questions for their own doctor." },
 ];
+
+const RULES = [
+  { title: "Questions, never advice", body: "The patient's own doctor decides. We bring better questions." },
+  { title: "Every claim has a source", body: "Nothing counts until a second person or the AI checks it." },
+  { title: "Free, and private by default", body: "No money asked. Families choose what is shared and who joins." },
+];
+
+const fmt = new Intl.NumberFormat("en-US");
 
 export default async function Home() {
   const viewer = await getViewer();
-  const listed = viewer ? await loadListedCasesForMe() : [];
+  const [cases, stats, matched] = await Promise.all([
+    loadPublicCases(6),
+    loadPublicStats(),
+    viewer ? loadListedCasesForMe() : Promise.resolve([]),
+  ]);
+  const showStats = !!stats && stats.cases + stats.volunteers + stats.leadsChecked + stats.aiRuns > 0;
 
   return (
     <>
-      <AppHeader />
-      <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col px-4 py-14 sm:px-8 lg:px-12">
-        {listed.length > 0 && viewer && (
-          <section aria-labelledby="for-you" className="mb-14">
-            <h2 id="for-you" className="font-display text-[28px] font-medium">
+      <AppHeader>
+        <nav aria-label="Main" className="flex gap-1">
+          <Link href="/cases/open" className="nav-link">
+            Ongoing cases
+          </Link>
+          <Link href="/#how" className="nav-link">
+            How it works
+          </Link>
+        </nav>
+      </AppHeader>
+      <main className="mx-auto flex w-full max-w-[1360px] flex-1 flex-col px-4 pb-20 sm:px-8 lg:px-12">
+        <section className="grid items-center gap-10 pt-12 pb-10 sm:pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
+          <div>
+            <h1 className="font-display text-[46px] leading-[1.02] font-medium tracking-[-0.025em] sm:text-[68px]">
+              Be part of the new wave.{" "}
+              <span className="hl" data-sweep="true" style={{ animationDelay: "300ms" }}>
+                Help someone.
+              </span>
+            </h1>
+            <p className="mt-6 max-w-[560px] text-lg leading-relaxed text-muted sm:text-[19px]">{SUBTEXT}</p>
+            <div className="mt-7 flex flex-wrap gap-2.5">
+              <Link href="/cases/open" className={btn.mark}>
+                Help on a case
+              </Link>
+              <Link href="/new" className={btn.secondary}>
+                Start a case for someone
+              </Link>
+            </div>
+          </div>
+          <aside aria-label="Why we built this" className="rounded-2xl bg-ink px-7 py-7 text-white sm:px-8">
+            <p className="text-[13px] text-[#c9cfd8]">Why we built this</p>
+            <p className="mt-2.5 font-display text-[19px] leading-[1.45] sm:text-xl">
+              Two years ago, AI could not do real research. Now it reads hundreds of papers, searches every open trial and explains a
+              gene report in minutes. Millions of people already use it every day, for someone they love or just out of curiosity.
+              Imagine what happens when they work together. You don&apos;t need to be a doctor. If you can ask good questions and check
+              sources, you can help someone get more time. Even 5 in 100 would be more than anyone thought possible before AI.
+            </p>
+            <Link href="/cases/open" className={`${btn.mark} mt-5`}>
+              Join the wave
+            </Link>
+          </aside>
+        </section>
+
+        {showStats && stats && (
+          <section aria-label="Live numbers" className="grid grid-cols-2 border-y border-line sm:grid-cols-4">
+            {[
+              [stats.cases, "ongoing cases"],
+              [stats.volunteers, "volunteers helping"],
+              [stats.leadsChecked, "leads checked"],
+              [stats.aiRuns, "AI runs shared"],
+            ].map(([n, label]) => (
+              <div key={label} className="py-5">
+                <strong className="block font-display text-[38px] leading-none font-medium sm:text-[42px]">{fmt.format(n as number)}</strong>
+                <span className="text-sm text-muted">{label}</span>
+              </div>
+            ))}
+          </section>
+        )}
+
+        <section aria-labelledby="ongoing" className="mt-14">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+            <h2 id="ongoing" className="font-display text-[32px] font-medium sm:text-[36px]">
+              Ongoing cases
+            </h2>
+            {cases.length > 0 && (
+              <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-ok">
+                <span className="live-dot" aria-hidden="true" />
+                People are working on these now
+              </span>
+            )}
+            <Link href="/cases/open" className={`${btn.secondary} ml-auto`}>
+              See all cases
+            </Link>
+          </div>
+          {cases.length > 0 ? (
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {cases.map((c) => (
+                <PublicCaseCard key={c.id} c={c} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
+              <PublicCaseCard c={SAMPLE_PUBLIC_CASE} sample />
+              <div className="flex flex-col justify-center gap-3 rounded-[14px] border border-dashed border-line-2 p-6">
+                <h3 className="font-display text-[22px] font-medium">The first cases are opening now</h3>
+                <p className="text-[15px] text-muted">
+                  Know someone going through cancer? Start a case for them. Want to help? Sign up and we&apos;ll tell you when a case
+                  needs your skills.
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  <Link href="/new" className={btn.mark}>
+                    Start a case for someone
+                  </Link>
+                  <Link href="/onboarding" className={btn.secondary}>
+                    Get case alerts
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+          <p className="mt-3.5 text-[13px] text-muted">Only cases the family chose to list. No names, photos or ID numbers, ever.</p>
+        </section>
+
+        {viewer && matched.length > 0 && (
+          <section aria-labelledby="for-you" className="mt-12">
+            <h2 id="for-you" className="font-display text-[26px] font-medium">
               Cases that need your profession
             </h2>
             <p className="mt-1 text-sm text-muted">
-              These cases have open tasks for a {EXPERTISE_LABEL[viewer.expertise].toLowerCase()}. Open one to ask to join.
+              These cases have open work for a {EXPERTISE_LABEL[viewer.expertise].toLowerCase()}.
             </p>
             <ul className="mt-4 flex flex-col gap-2">
-              {listed.map((c) => {
+              {matched.map((c) => {
                 const d = daysUntil(c.visitDate);
                 return (
                   <li key={c.caseId}>
@@ -52,56 +183,28 @@ export default async function Home() {
           </section>
         )}
 
-        <section className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
-          <div>
-            <h1 className="font-display text-[44px] leading-[1.05] font-medium tracking-[-0.02em] sm:text-[60px]">
-              Strangers with different skills, working on one cancer case.
-            </h1>
-            <p className="mt-5 max-w-[560px] text-lg leading-relaxed text-muted">
-              Case Room turns &ldquo;how can I help?&rdquo; into one specific task, with an AI helper next to it. Everyone sees what is
-              done, what is in progress and what is stuck.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="/new" className={btn.mark}>
-                Start a case
-              </Link>
-              <Link href="/case/sample" className={btn.secondary}>
-                See a sample case
-              </Link>
-            </div>
-          </div>
-
-          <figure aria-label="A piece of a brief" className="sheet rotate-[0.6deg] px-7 py-8 sm:px-9">
-            <p className="text-[13px] text-muted">The brief for the doctor</p>
-            <h2 className="mt-1 font-display text-[22px] font-medium">Options to ask about</h2>
-            <p className="mt-3 font-serif text-lg leading-relaxed text-ink-2">
-              We know the standard next treatments.{" "}
-              <span className="hl" data-sweep="true" style={{ animationDelay: "400ms" }}>
-                We still need every open trial that takes people after this drug, checked against her entry rules.
-              </span>{" "}
-              <span className="hl" data-sweep="true" style={{ animationDelay: "800ms" }}>
-                A doctor should check which options fit her scan.
-              </span>
-            </p>
-            <div className="mt-5 flex flex-wrap items-center gap-2 text-xs">
-              <span className="rounded-full bg-brand-soft px-2.5 py-0.5 font-semibold text-brand">Researcher</span>
-              <span className="rounded-full bg-bad-soft px-2.5 py-0.5 font-semibold text-bad">Doctor or nurse</span>
-              <span className="ml-auto text-muted">Checked by 2 people before it counts</span>
-            </div>
-          </figure>
-        </section>
-
-        <section aria-label="How it works" className="mt-20">
-          <h2 className="font-display text-[28px] font-medium">How a case works</h2>
-          <ol className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
+        <section id="how" aria-labelledby="how-title" className="mt-16 scroll-mt-6">
+          <h2 id="how-title" className="font-display text-[32px] font-medium sm:text-[36px]">
+            How a case works
+          </h2>
+          <ol className="mt-6 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((s, i) => (
-              <li key={s.title} className="border-t-2 border-ink pt-4">
-                <span className="font-display text-[22px] text-muted">{i + 1}</span>
-                <h3 className="mt-1 text-base font-semibold">{s.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted">{s.body}</p>
+              <li key={s.title} className="border-t-2 border-ink pt-3.5">
+                <span className="font-display text-[28px] leading-none font-medium">{i + 1}</span>
+                <h3 className="mt-2 text-base font-semibold">{s.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted">{s.body}</p>
               </li>
             ))}
           </ol>
+        </section>
+
+        <section aria-label="Our rules" className="mt-12 grid gap-4 sm:grid-cols-3">
+          {RULES.map((r) => (
+            <div key={r.title} className="rounded-[14px] bg-hover p-5">
+              <h3 className="text-[15px] font-semibold">{r.title}</h3>
+              <p className="mt-1 text-sm text-muted">{r.body}</p>
+            </div>
+          ))}
         </section>
       </main>
     </>

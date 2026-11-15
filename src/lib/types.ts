@@ -118,6 +118,8 @@ export type CaseRoom = {
   joinMode: "approve" | "invite_only";
   listed?: boolean;
   cancerType?: string | null;
+  publicGoal?: string | null;
+  cancerStage?: string | null;
   coApproverId?: string;
   creatorId?: string;
   sections: Section[];

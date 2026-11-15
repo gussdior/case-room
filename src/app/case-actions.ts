@@ -25,6 +25,8 @@ const OUR_ERRORS = [
   "Only the task owner can add helpers",
   "Only the task owner can change this",
   "Only the case creator or co-approver can change settings",
+  "Only the case creator can change how the case is listed",
+  "Add a one line public goal before listing the case",
   "Only the case creator can choose a co-approver",
   "Only the case creator can list the case",
   "Pick an approved volunteer",
@@ -113,6 +115,10 @@ export async function updateCaseSettings(caseId: string, _: Result, form: FormDa
   const visit = text(form, "visit", 10) || null;
   const joinMode = form.get("join_mode") === "invite_only" ? "invite_only" : "approve";
   if (!goal) return { error: "Add a goal." };
+  if (form.has("listed_present") && form.get("listed") === "on") {
+    const pg = text(form, "public_goal", 140);
+    if (pg.length < 10) return { error: "Write a one line public goal of at least 10 characters before listing the case." };
+  }
   if (visit && !/^\d{4}-\d{2}-\d{2}$/.test(visit)) return { error: "Pick the visit date from the calendar." };
   const supabase = await createClient();
   // Forms with the "listed" switch (creator only) use the newer settings call.
@@ -129,6 +135,8 @@ export async function updateCaseSettings(caseId: string, _: Result, form: FormDa
           p_join_mode: joinMode,
           p_listed: form.get("listed") === "on",
           p_cancer_type: cancerType,
+          p_public_goal: text(form, "public_goal", 140) || null,
+          p_cancer_stage: text(form, "cancer_stage", 40) || null,
         }
       : { c: caseId, p_goal: goal, p_summary: summary, p_visit: visit, p_join_mode: joinMode },
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ListingFields } from "@/components/listing-fields";
 import { decideRequest, removeMember, setCoApprover, updateCaseSettings } from "@/app/case-actions";
 import { DemoButton } from "@/components/demo-button";
 import { ActionButton, ActionForm, SubmitButton, inputClass, labelClass } from "@/components/forms";
@@ -215,29 +216,12 @@ export default async function PeoplePage({ params }: PageProps<"/case/[id]/peopl
                   </label>
                 </fieldset>
                 {isCreator && (
-                  <>
-                    <input type="hidden" name="listed_present" value="1" />
-                    <label htmlFor="s-cancer" className={labelClass}>
-                      Cancer type, shown to matching volunteers
-                    </label>
-                    <input
-                      id="s-cancer"
-                      name="cancer_type"
-                      maxLength={60}
-                      placeholder="e.g. Lung cancer"
-                      defaultValue={room.cancerType ?? ""}
-                      className={inputClass}
-                    />
-                    <label className="flex cursor-pointer items-start gap-3 rounded-[12px] bg-paper p-4">
-                      <input type="checkbox" name="listed" defaultChecked={room.listed} className="mt-1 h-4 w-4 flex-none accent-brand" />
-                      <span>
-                        <span className="block text-[15px] font-semibold">List this case so matching volunteers get notified</span>
-                        <span className="block text-[13px] text-muted">
-                          They see the goal, cancer type and skills needed. You still approve each person.
-                        </span>
-                      </span>
-                    </label>
-                  </>
+                  <ListingFields
+                    listed={!!room.listed}
+                    cancerType={room.cancerType ?? null}
+                    cancerStage={room.cancerStage ?? null}
+                    publicGoal={room.publicGoal ?? null}
+                  />
                 )}
                 <SubmitButton className="self-start">Save settings</SubmitButton>
               </ActionForm>

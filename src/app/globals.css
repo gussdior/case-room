@@ -254,7 +254,8 @@
     transform: scale(0.97);
   }
   .chip[aria-pressed="true"],
-  .chip[aria-checked="true"] {
+  .chip[aria-checked="true"],
+  .chip[aria-current="true"] {
     background: var(--color-ink);
     border-color: var(--color-ink);
     color: #fff;
@@ -383,6 +384,48 @@
   }
 }
 
+@layer components {
+  /* Public case cards: lift on hover, underline the join link. */
+  .case-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px;
+    border: 1px solid var(--color-line);
+    border-radius: 14px;
+    background: var(--color-sheet);
+    color: var(--color-ink);
+    text-decoration: none;
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .case-card:hover {
+    border-color: var(--color-brand-line);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 34px -22px rgba(43, 63, 160, 0.55);
+    color: var(--color-ink);
+  }
+  .case-card:hover .join-link {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--color-ok);
+    animation: live-pulse 2s ease-out infinite;
+  }
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(28, 124, 84, 0.5);
+  }
+  80%,
+  100% {
+    box-shadow: 0 0 0 8px rgba(28, 124, 84, 0);
+  }
+}
 @keyframes march {
   to {
     background-position: 14px 0, -14px 100%, 0 -14px, 100% 14px;
