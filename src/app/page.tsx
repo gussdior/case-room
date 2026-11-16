@@ -114,10 +114,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         {showStats && stats && (
           <section aria-label="Live numbers" className="grid grid-cols-2 border-y border-line sm:grid-cols-4">
             {[
-              [stats.cases, "ongoing cases"],
-              [stats.volunteers, "volunteers helping"],
-              [stats.leadsChecked, "ideas checked"],
-              [stats.aiRuns, "AI answers shared"],
+              [stats.cases, stats.cases === 1 ? "ongoing case" : "ongoing cases"],
+              [stats.volunteers, stats.volunteers === 1 ? "volunteer helping" : "volunteers helping"],
+              [stats.leadsChecked, stats.leadsChecked === 1 ? "idea checked" : "ideas checked"],
+              [stats.aiRuns, stats.aiRuns === 1 ? "AI answer shared" : "AI answers shared"],
             ].map(([n, label]) => (
               <div key={label} className="py-5">
                 <strong className="block font-display text-[38px] leading-none font-medium sm:text-[42px]">{fmt.format(n as number)}</strong>
