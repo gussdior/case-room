@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { createWithTool } from "@/lib/ai/call-tool";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildPack } from "@/lib/case-pack";
 import { scrubDeep } from "@/lib/drafts/scrub";
@@ -69,12 +70,11 @@ export async function suggestLeads(supabase: SupabaseClient, caseId: string, use
   const client = new Anthropic();
   let leads: SuggestedLead[] = [];
   try {
-    const msg = await client.messages.create({
+    const msg = await createWithTool(client, {
       model: MODEL,
       max_tokens: 2000,
       system: SYSTEM,
       tools: [TOOL],
-      tool_choice: { type: "tool", name: TOOL.name },
       messages: [{ role: "user", content: pack }],
     });
     const use = msg.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");

@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { createWithTool } from "@/lib/ai/call-tool";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildPack } from "@/lib/case-pack";
 import { scrubDeep } from "@/lib/drafts/scrub";
@@ -53,12 +54,11 @@ export async function draftBrief(supabase: SupabaseClient, caseId: string): Prom
   if (!pack) return { error: "Join this case first." };
   let out: { position: number; body: string }[] = [];
   try {
-    const msg = await new Anthropic().messages.create({
+    const msg = await createWithTool(new Anthropic(), {
       model: MODEL,
       max_tokens: 2500,
       system: SYSTEM,
       tools: [TOOL],
-      tool_choice: { type: "tool", name: TOOL.name },
       messages: [
         {
           role: "user",

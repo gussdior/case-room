@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { createWithTool } from "@/lib/ai/call-tool";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { scrub } from "@/lib/drafts/scrub";
 import { AGE_RANGE_LABEL, EXPERTISE_LABEL, EXPERTISE_ORDER, type AgeRange, type Expertise } from "@/lib/types";
@@ -131,12 +132,11 @@ export async function writeOutreach(
   let places: Place[] = [];
   let rawReddit: Partial<RedditPost> | undefined;
   try {
-    const msg = await new Anthropic().messages.create({
+    const msg = await createWithTool(new Anthropic(), {
       model: MODEL,
       max_tokens: 4000,
       system: SYSTEM,
       tools: [TOOL],
-      tool_choice: { type: "tool", name: TOOL.name },
       messages: [{ role: "user", content: ctx }],
     });
     const use = msg.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");

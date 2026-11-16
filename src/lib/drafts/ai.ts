@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { createWithTool } from "@/lib/ai/call-tool";
 import { AGE_RANGES, EXPERTISE_ORDER, type AgeRange, type Expertise } from "@/lib/types";
 import { scrubDeep, type ScrubHit } from "./scrub";
 import {
@@ -116,12 +117,11 @@ export async function readDocument(
           source: { type: "base64", media_type: file.mime as "image/jpeg" | "image/png" | "image/webp", data },
         };
 
-  const msg = await client.messages.create({
+  const msg = await createWithTool(client, {
     model: MODEL,
     max_tokens: 4000,
     system: READ_SYSTEM,
     tools: [READ_TOOL],
-    tool_choice: { type: "tool", name: READ_TOOL.name },
     messages: [{ role: "user", content: [block, { type: "text", text: "Record this document." }] }],
   });
   const use = msg.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
@@ -274,12 +274,11 @@ export async function composeDraft(docs: ComposeDoc[], answers: DraftAnswers): P
     answers.relationship ?? "family"
   ];
 
-  const msg = await client.messages.create({
+  const msg = await createWithTool(client, {
     model: MODEL,
     max_tokens: 6000,
     system: COMPOSE_SYSTEM,
     tools: [COMPOSE_TOOL],
-    tool_choice: { type: "tool", name: COMPOSE_TOOL.name },
     messages: [
       {
         role: "user",
