@@ -119,8 +119,8 @@ export async function createCase(_: Result, form: FormData): Promise<Result> {
     });
   }
   revalidatePath("/cases");
-  // Last step: Find your helpers. It also asks the AI to suggest leads and draft the brief right away.
-  redirect(`/case/${data}/share?new=manual`);
+  // Straight to the case. The day one strip asks the AI to suggest leads and draft the brief right away.
+  redirect(`/case/${data}?new=1`);
 }
 
 export async function updateCaseSettings(caseId: string, _: Result, form: FormData): Promise<Result> {

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CaseAiBar } from "@/components/case-ai-bar";
 import { DayOneStrip } from "@/components/day-one";
-import { ShareCaseButton } from "@/components/share-case";
 import { CasePreview, PrivateCase } from "@/components/case-preview";
 import { JoinPanel } from "@/components/join-panel";
 import { LeadCard, RailHeading, RunItem } from "@/components/lead-bits";
@@ -73,7 +72,6 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
           )}
         </div>
         <div className="flex flex-none flex-col items-end gap-3">
-          <ShareCaseButton caseId={room.id} publicPreview={!!room.publicPreview} demo={demo} />
           {room.visitInDays !== null && (
             <div className="text-right">
               <strong className="block font-display text-[40px] leading-none font-medium">

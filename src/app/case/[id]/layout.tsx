@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { CaseNav } from "@/components/case-nav";
+import { ShareMenu } from "@/components/share-menu";
 import { getRoom, pendingRequests } from "@/lib/data";
 import { SAMPLE_VISITOR_QUESTIONS } from "@/lib/sample-case";
+import { loadShareCard } from "@/lib/share-card";
+import { cardVersion, shareText } from "@/lib/share-text";
 import { createClient } from "@/lib/supabase/server";
 
 /** Unanswered visitor questions, for the nav. Any approved member can read them. */
@@ -25,16 +28,31 @@ export default async function CaseLayout({ children, params }: LayoutProps<"/cas
   const room = loaded.room;
   const showPeople = room ? room.viewer === null || room.viewer.isAdmin : false;
   const questionCount = room ? await unansweredQuestions(room.id, room.viewer === null) : 0;
+  // Sharing is for the creator and co-approvers. The sample case shows it to everyone.
+  const demo = room?.viewer === null;
+  const canShare = !!room && (demo || !!room.viewer?.isAdmin);
+  const card = canShare && room ? await loadShareCard(room.id) : null;
 
   return (
     <>
       <AppHeader
         right={
-          room?.isSample || room?.viewer === null ? (
-            <span className="rounded-full bg-mark-soft px-3 py-1.5 text-xs font-semibold text-mark-text">
-              Sample case, not a real person
-            </span>
-          ) : null
+          <>
+            {(room?.isSample || demo) && (
+              <span className="rounded-full bg-mark-soft px-3 py-1.5 text-xs font-semibold text-mark-text">
+                Sample case, not a real person
+              </span>
+            )}
+            {canShare && room && (
+              <ShareMenu
+                caseId={room.id}
+                text={shareText(card?.needed ?? [])}
+                version={cardVersion([card?.cancerType, card?.cancerStage, ...(card?.needed ?? []), "/", ...(card?.seats ?? [])])}
+                previewOn={demo || !!room.publicPreview}
+                canTurnOn={room.viewer?.role === "creator"}
+              />
+            )}
+          </>
         }
       >
         {room && (
