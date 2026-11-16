@@ -1,6 +1,6 @@
 import { caseCard, cardFirstLine, OG_SIZE, seatCard, type Seat } from "@/lib/og-card";
 import { loadShareCard } from "@/lib/share-card";
-import { shareLine } from "@/lib/share-text";
+import { isShareRole, shareLine, shareLineFor } from "@/lib/share-text";
 import type { Expertise } from "@/lib/types";
 
 export const alt = "Case Room: looking for someone who wants to help someone going through cancer";
@@ -18,11 +18,11 @@ const FAMILY: Seat = { letter: "F", label: "Family", bg: "#E7EAE7", fg: "#17202B
 
 /** The card for a shared case link: the ask, and the team with one seat open.
  *  Only what the public page already shows; a plain card when the case is private. */
-export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function Image({ params }: { params: Promise<{ id: string; role?: string }> }) {
+  const { id, role } = await params;
   const card = await loadShareCard(id);
   if (!card || !card.publicPreview) return caseCard({ first: "Volunteers and AI,", second: "working on one cancer case.", chips: [] });
-  const line = shareLine(card.needed);
+  const line = role && isShareRole(role) ? shareLineFor(role) : shareLine(card.needed);
   const facts = card.cancerType ? `${cardFirstLine(card.cancerType, card.cancerStage)} ` : "";
   const seats = card.seats.slice(0, 3).map((e) => SEAT[e] ?? SEAT.no_medical);
   return seatCard({ ...line, footer: `${facts}About 30 minutes. Free.`, seats: [...seats, FAMILY] });

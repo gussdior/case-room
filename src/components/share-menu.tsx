@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { turnOnPreview } from "@/app/share-actions";
+import { SHARE_ROLES, shareTextFor, type ShareRoleSlug } from "@/lib/share-text";
 
 type Props = {
   caseId: string;
-  /** The line that goes into the post, for example "Looking for a researcher who wants to help someone going through cancer." */
-  text: string;
+  /** The role the case needs most right now. The sharer can pick another. */
+  suggested: ShareRoleSlug;
   /** Changes when the card changes, so link previews refresh. */
   version: string;
   previewOn: boolean;
@@ -19,12 +20,14 @@ const ICON = "flex h-7 w-7 flex-none items-center justify-center rounded-[7px] b
 
 /** One Share button: opens a post on X, Reddit or WhatsApp with the case link in it, or copies the link.
  *  The link preview card is made from the case, with no names. */
-export function ShareMenu({ caseId, text, version, previewOn, canTurnOn }: Props) {
+export function ShareMenu({ caseId, suggested, version, previewOn, canTurnOn }: Props) {
   const router = useRouter();
   const menuId = useId();
   const wrap = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
+  const [role, setRole] = useState<ShareRoleSlug>(suggested);
+  const text = shareTextFor(role);
   const [turnedOn, setTurnedOn] = useState(false);
   const on = previewOn || turnedOn;
   const [copied, setCopied] = useState(false);
@@ -65,7 +68,7 @@ export function ShareMenu({ caseId, text, version, previewOn, canTurnOn }: Props
 
   // The menu only renders after a click, so the browser address is always there.
   const origin = typeof window === "undefined" ? "" : window.location.origin;
-  const url = `${origin}/case/${caseId}?v=${version}`;
+  const url = `${origin}/case/${caseId}/for/${role}?v=${version}`;
   const enc = encodeURIComponent;
   const links = [
     { label: "Share on X", icon: "X", href: `https://x.com/intent/post?text=${enc(text)}&url=${enc(url)}` },
@@ -106,6 +109,25 @@ export function ShareMenu({ caseId, text, version, previewOn, canTurnOn }: Props
         >
           {on ? (
             <div role="menu" aria-label="Share this case" className="flex flex-col">
+              <div className="px-3 pt-1 pb-2">
+                <label htmlFor={`${menuId}-role`} className="mb-1 block text-xs font-semibold text-muted">
+                  Who are you looking for?
+                </label>
+                <select
+                  id={`${menuId}-role`}
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as ShareRoleSlug)}
+                  className="min-h-11 w-full rounded-[10px] border border-line-2 bg-white px-2.5 text-sm font-semibold text-ink"
+                >
+                  {SHARE_ROLES.map((r) => (
+                    <option key={r.slug} value={r.slug}>
+                      {r.label}
+                      {r.slug === suggested && r.slug !== "anyone" ? " (needed most)" : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-xs leading-snug text-muted">{text}</p>
+              </div>
               {links.map((l) => (
                 <a key={l.label} data-item role="menuitem" href={l.href} target="_blank" rel="noopener noreferrer" className={item} onClick={() => setOpen(false)}>
                   <span aria-hidden="true" className={ICON}>

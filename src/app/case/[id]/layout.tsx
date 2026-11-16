@@ -5,7 +5,7 @@ import { ShareMenu } from "@/components/share-menu";
 import { getRoom, pendingRequests } from "@/lib/data";
 import { SAMPLE_VISITOR_QUESTIONS } from "@/lib/sample-case";
 import { loadShareCard } from "@/lib/share-card";
-import { cardVersion, shareText } from "@/lib/share-text";
+import { cardVersion, suggestedRole } from "@/lib/share-text";
 import { createClient } from "@/lib/supabase/server";
 
 /** Unanswered visitor questions, for the nav. Any approved member can read them. */
@@ -46,7 +46,7 @@ export default async function CaseLayout({ children, params }: LayoutProps<"/cas
             {canShare && room && (
               <ShareMenu
                 caseId={room.id}
-                text={shareText(card?.needed ?? [])}
+                suggested={suggestedRole(card?.needed ?? [])}
                 version={cardVersion([card?.cancerType, card?.cancerStage, ...(card?.needed ?? []), "/", ...(card?.seats ?? [])])}
                 previewOn={demo || !!room.publicPreview}
                 canTurnOn={room.viewer?.role === "creator"}
