@@ -28,7 +28,7 @@ export function StepOpen({ draft, docs }: { draft: Draft; docs: DraftDoc[] }) {
         : "Not booked yet",
     ],
     ["Treatments", `${draft.treatments.length} added to "What we tried"`],
-    ["Tasks", `${tasks.length} ready for volunteers`],
+    ["Ideas", `${tasks.length} ready for volunteers`],
     [
       "Your files",
       docs.length === 0 ? "Deleted" : draft.keepFiles ? "Kept private to you" : "Deleted when the case opens",

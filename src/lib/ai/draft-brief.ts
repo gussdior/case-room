@@ -7,6 +7,7 @@ import { scrubDeep } from "@/lib/drafts/scrub";
 import { AI_DRAFT_LABEL } from "@/lib/types";
 
 import { aiErrorMessage } from "@/lib/ai/errors";
+import { AI_WORDING_RULES } from "@/lib/time";
 const MODEL = "claude-sonnet-5-5";
 
 export const AI_DRAFT_NOTE = AI_DRAFT_LABEL;
@@ -42,7 +43,8 @@ Rules:
 - Never invent facts, results, dates or treatments. If the case doesn't say, write what still needs to be found out.
 - Never give treatment advice and never say what the patient should do. For options, write questions to ask the doctor.
 - No names, birth dates, ID numbers, addresses, hospital or doctor names.
-- A person will check this draft before it counts, so mark guesses as open questions.`;
+- A person will check this draft before it counts, so mark guesses as open questions.
+${AI_WORDING_RULES}`;
 
 /** Fills empty brief sections with a labeled AI draft. The caller must be a case admin. */
 export async function draftBrief(supabase: SupabaseClient, caseId: string): Promise<{ filled?: number; error?: string }> {

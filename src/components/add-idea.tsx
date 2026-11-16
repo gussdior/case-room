@@ -5,18 +5,29 @@ import { addLead } from "@/app/lead-actions";
 import { ActionForm, SubmitButton, inputClass, labelClass } from "./forms";
 
 /** "Add an idea": a title and one optional line. Nothing else. */
-export function AddIdea({ caseId, demo, primary }: { caseId: string; demo: boolean; primary?: boolean }) {
+export function AddIdea({
+  caseId,
+  demo,
+  primary,
+  corner,
+}: {
+  caseId: string;
+  demo: boolean;
+  primary?: boolean;
+  /** Sits in the top right corner of the section while closed, and opens as a full width form below the header. */
+  corner?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const id = useId();
   return (
-    <div className={open ? "w-full" : ""}>
+    <div className={open ? "w-full" : corner ? "mb-3 flex justify-end sm:absolute sm:top-0 sm:right-0 sm:mb-0" : ""}>
       {!open && (
         <button type="button" className={primary ? "btn btn-mark" : "btn btn-secondary"} aria-expanded={false} onClick={() => setOpen(true)}>
           Add an idea
         </button>
       )}
       {open && (
-        <div className="panel fade-in mt-1 p-5">
+        <div className={`panel fade-in p-5 ${corner ? "mb-5" : "mt-1"}`}>
           {demo ? (
             <p className="text-sm text-muted">This is a sample case. On a real case you can add anything worth checking.</p>
           ) : (

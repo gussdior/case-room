@@ -30,7 +30,7 @@ export const AI_TOOLS: AiToolInfo[] = [
   {
     id: "any_chat_ai",
     name: "Any chat AI",
-    does: "Copy the case pack, ask your own AI, then paste the answer back to get its sources checked",
+    does: "Copy the case notes, ask your own AI, then paste the answer back to get its sources checked",
     suits: ["doctor_nurse", "researcher", "bioinformatics", "insurance_legal", "no_medical"],
     kinds: [],
     icon: "AI",

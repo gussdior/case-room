@@ -116,8 +116,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             {[
               [stats.cases, "ongoing cases"],
               [stats.volunteers, "volunteers helping"],
-              [stats.leadsChecked, "leads checked"],
-              [stats.aiRuns, "AI runs shared"],
+              [stats.leadsChecked, "ideas checked"],
+              [stats.aiRuns, "AI answers shared"],
             ].map(([n, label]) => (
               <div key={label} className="py-5">
                 <strong className="block font-display text-[38px] leading-none font-medium sm:text-[42px]">{fmt.format(n as number)}</strong>
@@ -152,10 +152,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
               <PublicCaseCard c={SAMPLE_PUBLIC_CASE} sample />
               <div className="flex flex-col justify-center gap-3 rounded-[14px] border border-dashed border-line-2 p-6">
-                <h3 className="font-display text-[22px] font-medium">The first cases are opening now</h3>
+                <h3 className="font-display text-[22px] font-medium">The first real cases are opening soon.</h3>
                 <p className="text-[15px] text-muted">
-                  Know someone going through cancer? Start a case for them. Want to help? Sign up and we&apos;ll tell you when a case
-                  needs your skills.
+                  Know someone going through cancer? Start a case for them. Want to help? Set up your profile, turn on case alerts
+                  there, and we&apos;ll tell you when a case needs your skills.
                 </p>
                 <div className="flex flex-wrap gap-2.5">
                   <Link href="/new" className={btn.mark}>
@@ -188,7 +188,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                       <span className="min-w-0 flex-[1_1_300px]">
                         <span className="block font-display text-lg">{c.goal}</span>
                         <span className="block text-[13px] text-muted">
-                          {[c.cancerType, `${c.openTasks} open task${c.openTasks === 1 ? "" : "s"} for you`, d !== null && d >= 0 ? `doctor visit in ${d} days` : null]
+                          {[c.cancerType, `${c.openTasks} open idea${c.openTasks === 1 ? "" : "s"} for you`, d !== null && d >= 0 ? `doctor visit in ${d} days` : null]
                             .filter(Boolean)
                             .join(", ")}
                         </span>

@@ -57,8 +57,8 @@ export const SAMPLE_CASE: CaseRoom = {
       position: 4,
       title: "Access and cost",
       body: "Most US plans must cover routine care costs inside an approved trial. Travel is usually not covered. Questions to ask: which costs the trial pays for, and whether there is travel help.",
-      status: "empty",
-      statusNote: "Empty",
+      status: "draft",
+      statusNote: "AI draft",
       sourceNote: AI_DRAFT_LABEL,
     },
     {

@@ -183,15 +183,10 @@ export async function loadCase(id: string): Promise<CaseRoom | Teaser | null> {
     const own = tasks.filter((t) => t.sectionId === s.id);
     const checked = own.filter((t) => t.status === "checked").length;
     const started = own.some((t) => t.status === "checked" || t.status === "submitted");
-    const status = own.length > 0 && checked === own.length ? "checked" : started ? "draft" : "empty";
+    const aiDraft = !started && !!s.body?.trim() && !!s.source_note;
+    const status = own.length > 0 && checked === own.length ? "checked" : started || aiDraft ? "draft" : "empty";
     const statusNote =
-      own.length === 0
-        ? "No tasks yet"
-        : status === "checked"
-          ? "Checked"
-          : started
-            ? `${checked} of ${own.length} parts checked`
-            : "Empty";
+      status === "checked" ? "Checked" : started ? `${checked} of ${own.length} parts checked` : aiDraft ? "AI draft" : "Empty";
     return { id: s.id, position: s.position, title: s.title, body: s.body, status, statusNote, sourceNote: s.source_note ?? undefined };
   });
 

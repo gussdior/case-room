@@ -27,8 +27,8 @@ function plural(n: number, one: string, many: string) {
 export function PublicCaseCard({ c, sample = false }: { c: PublicCase; sample?: boolean }) {
   const href = sample ? "/case/sample" : `/case/${c.id}`;
   const chips = [
-    c.promising > 0 && { text: plural(c.promising, "promising lead", "promising leads"), tone: "bg-ok-soft text-ok" },
-    c.exploring > 0 && { text: `${c.exploring} exploring`, tone: "bg-brand-soft text-brand" },
+    c.promising > 0 && { text: plural(c.promising, "promising idea", "promising ideas"), tone: "bg-ok-soft text-ok" },
+    c.exploring > 0 && { text: `${c.exploring} being checked`, tone: "bg-brand-soft text-brand" },
     c.needsSomeone > 0 && { text: `${c.needsSomeone} needs someone`, tone: "bg-mark-soft text-mark-text" },
     c.ruledOut > 0 && { text: `${c.ruledOut} ruled out`, tone: "bg-soft text-muted" },
   ].filter(Boolean) as { text: string; tone: string }[];
@@ -36,7 +36,7 @@ export function PublicCaseCard({ c, sample = false }: { c: PublicCase; sample?: 
   return (
     <Link href={href} className="case-card" aria-label={`${c.cancerType}: ${c.goal}. ${sample ? "Open the sample case" : "Ask to join"}`}>
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-muted">
-        {sample && <span className="rounded-full bg-mark px-2 py-0.5 text-xs font-semibold text-ink">Sample</span>}
+        {sample && <span className="rounded-full bg-mark px-2 py-0.5 text-xs font-semibold text-ink">Sample case</span>}
         <span>{c.cancerType}</span>
         {c.cancerStage && <span>{c.cancerStage}</span>}
       </div>
@@ -50,7 +50,7 @@ export function PublicCaseCard({ c, sample = false }: { c: PublicCase; sample?: 
           ))}
         </div>
       ) : (
-        <p className="text-[13px] text-muted">Just started. No leads yet.</p>
+        <p className="text-[13px] text-muted">Just started. No ideas yet.</p>
       )}
       {c.needed.length > 0 && (
         <div className="rounded-[10px] border border-dashed border-mark-edge bg-mark-tint px-3 py-2.5 text-[13px] text-mark-text">
@@ -74,7 +74,7 @@ export function PublicCaseCard({ c, sample = false }: { c: PublicCase; sample?: 
           </span>
         )}
         <span>{c.helpers > 0 ? `${c.helpers} helping` : "Be the first to help"}</span>
-        <span className="join-link ml-auto font-semibold text-brand">{sample ? "See how it works" : "Ask to join"}</span>
+        <span className="join-link ml-auto font-semibold text-brand">{sample ? "See the sample case" : "Ask to join"}</span>
       </div>
     </Link>
   );

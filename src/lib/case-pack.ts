@@ -1,11 +1,11 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { scrubKeepLinks } from "@/lib/drafts/scrub";
+import { AI_WORDING_RULES, dateWithDistance, friendlyDate, friendlyMonth } from "@/lib/time";
 import { LEAD_KIND_LABEL, LEAD_STATUS_LABEL, type LeadKind, type LeadStatus } from "@/lib/types";
 
-const month = (d: string | null) => (d ? d.slice(0, 7) : "");
 
-/** A plain text summary of a case to paste into any AI, with the rules it should follow.
+/** The case notes: a plain text summary of a case to paste into any AI, with the rules it should follow.
  *  Returns null when the user can't see the case. Names and IDs are scrubbed again on the way out. */
 export async function buildPack(supabase: SupabaseClient, caseId: string, leadId?: string | null): Promise<string | null> {
   const { data: kase } = await supabase
@@ -33,7 +33,8 @@ export async function buildPack(supabase: SupabaseClient, caseId: string, leadId
 
   const focus = leadId ? (leads ?? []).find((l) => l.id === leadId) : undefined;
   const lines: string[] = [
-    "Case Room case pack",
+    "Case Room case notes",
+    `Today is ${friendlyDate(new Date().toISOString())}.`,
     "Shared with the family's consent. Names, birth dates and ID numbers are removed. Do not try to identify the patient.",
     "",
     "## About the case",
@@ -42,7 +43,7 @@ export async function buildPack(supabase: SupabaseClient, caseId: string, leadId
     kase.cancer_stage ? `Stage: ${kase.cancer_stage}` : "",
     kase.age_range ? `Age range: ${String(kase.age_range).replace("_plus", " and over").replace("under_", "under ").replace("_", " to ")}` : "",
     kase.current_treatment ? `Current treatment: ${kase.current_treatment}` : "",
-    kase.visit_date ? `Next doctor visit: ${kase.visit_date}` : "",
+    kase.visit_date ? `Next doctor visit: ${dateWithDistance(kase.visit_date)}` : "",
     kase.summary ? `Summary: ${kase.summary}` : "",
     "",
   ];
@@ -56,7 +57,7 @@ export async function buildPack(supabase: SupabaseClient, caseId: string, leadId
     lines.push("## Treatments so far");
     (treatments ?? []).forEach((t) =>
       lines.push(
-        `- ${t.title}${t.started_on ? ` (${month(t.started_on)}${t.ended_on ? ` to ${month(t.ended_on)}` : ""})` : ""}: ${String(t.outcome).replace(/_/g, " ")}${t.outcome_note ? `, ${t.outcome_note}` : ""}`,
+        `- ${t.title}${t.started_on ? ` (${friendlyMonth(t.started_on)}${t.ended_on ? ` to ${friendlyMonth(t.ended_on)}` : ""})` : ""}: ${String(t.outcome).replace(/_/g, " ")}${t.outcome_note ? `, ${t.outcome_note}` : ""}`,
       ),
     );
     lines.push("");
@@ -91,6 +92,7 @@ export async function buildPack(supabase: SupabaseClient, caseId: string, leadId
     "- Say which sources are preprints (not peer reviewed).",
     "- Check the list above before suggesting something already ruled out.",
     "- End with 1 to 3 questions the patient could ask the doctor.",
+    ...AI_WORDING_RULES.split("\n"),
   );
   return scrubKeepLinks(lines.filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n")).text;
 }

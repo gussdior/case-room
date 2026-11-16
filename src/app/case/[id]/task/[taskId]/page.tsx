@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { submitWork } from "@/app/case-actions";
 import { AiHelper, type AiTurn } from "@/components/ai-helper";
+import { RichText } from "@/components/rich-text";
 import { DemoButton } from "@/components/demo-button";
 import { Composer, MessageItem } from "@/components/message-list";
 import { TaskHeaderActions, TaskWorkPanels } from "@/components/task-actions";
@@ -254,7 +255,7 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
                       {checkers.length ? `Checked by ${checkers.join(" and ")}` : "Needs a second person to check"}
                     </span>
                   </div>
-                  <p className="max-w-[68ch] font-serif text-[17px] leading-relaxed whitespace-pre-line break-words text-ink-2">{s.body}</p>
+                  <RichText text={s.body} className="max-w-[68ch] font-serif text-[17px] leading-relaxed text-ink-2" />
                   <div className="flex flex-wrap gap-2 text-xs">
                     {s.sources.map((src, n) => (
                       <a

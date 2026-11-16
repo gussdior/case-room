@@ -41,7 +41,7 @@ export function LeadCardActions({
             });
           }}
         >
-          {pending ? "Taking it" : "Take this lead"}
+          {pending ? "Taking it" : "Take this idea"}
         </button>
       )}
       <Link href={askHref} className="btn btn-secondary btn-sm">

@@ -64,6 +64,12 @@ export function roleLabel(m: Pick<Member, "roleTitle" | "expertise">): string {
   return m.expertise === "no_medical" ? "volunteer" : EXPERTISE_LABEL[m.expertise].toLowerCase();
 }
 
+/** How a person shows in lists: the family first, then "B, nurse". Same words everywhere. */
+export function personLabel(m: Pick<Member, "name" | "role" | "roleTitle" | "expertise">): string {
+  if (m.role === "creator" || m.role === "family") return "Family";
+  return `${m.name.replace("Dr. ", "").charAt(0).toUpperCase()}, ${roleLabel(m)}`;
+}
+
 export type AgeRange = "under_18" | "18_34" | "35_54" | "55_64" | "65_74" | "75_plus";
 export const AGE_RANGE_LABEL: Record<AgeRange, string> = {
   under_18: "Under 18",

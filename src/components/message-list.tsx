@@ -19,7 +19,7 @@ export function MessageItem({ room, msg, compact }: { room: CaseRoom; msg: Messa
       <div className={`flex min-w-0 flex-1 flex-col gap-1.5 ${msg.isAi ? "rounded-xl border border-line bg-paper px-3.5 py-3" : ""}`}>
         <div className="flex flex-wrap items-center gap-1.5 text-xs sm:text-[13px]">
           <strong>{msg.isAi ? "AI helper" : author ? <PersonLink person={author} /> : "Former member"}</strong>
-          {isOwner && <span className="text-subtle">task owner</span>}
+          {isOwner && <span className="text-subtle">idea owner</span>}
           <span className="text-subtle">{msg.createdAt}</span>
           {msg.kind === "stuck" && <Badge tone="bad">Stuck</Badge>}
           {wantsToJoin && <Badge tone="warn">Wants to help</Badge>}

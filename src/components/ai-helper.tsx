@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { postMessage } from "@/app/case-actions";
 import { onReusePrompt } from "./run-actions";
 import { safeHref } from "@/lib/safe-href";
+import { RichText, plainText } from "./rich-text";
 import type { Source } from "@/lib/types";
 
 export type AiTurn = {
@@ -32,42 +33,16 @@ export function onAddToWork(fn: (d: AddToWorkDetail) => void) {
 
 const CITE = /\[(https?:\/\/[^\]\s]+)\]/g;
 
-/** Plain text with [url] citations turned into numbered source links. */
+/** An AI answer: safe formatting, with [url] citations turned into numbered source links. */
 function Answer({ text, sources, streaming }: { text: string; sources: Source[]; streaming?: boolean }) {
-  const order: string[] = [];
-  const num = (url: string) => {
-    let i = order.indexOf(url);
-    if (i === -1) i = order.push(url) - 1;
-    return i + 1;
-  };
-  const clean = text.replace(/\*\*(.+?)\*\*/g, "$1");
-  const parts: ReactNode[] = [];
-  let last = 0;
-  for (const m of clean.matchAll(CITE)) {
-    parts.push(clean.slice(last, m.index));
-    const url = m[1];
-    const src = sources.find((s) => s.url === url);
-    parts.push(
-      <sup key={`${m.index}-${url}`}>
-        <a
-          href={safeHref(url)}
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          title={src?.title ?? url}
-          className="rounded-[5px] bg-brand-soft px-1.5 py-px font-sans text-[11px] font-bold no-underline transition-colors hover:bg-brand hover:text-white"
-        >
-          {num(url)}
-        </a>
-      </sup>,
-    );
-    last = (m.index ?? 0) + m[0].length;
-  }
-  parts.push(clean.slice(last));
+  const titles = Object.fromEntries(sources.filter((s) => s.title).map((s) => [s.url, s.title as string]));
   return (
-    <div className="font-serif text-[17px] leading-relaxed whitespace-pre-line text-ink-2">
-      {parts}
-      {streaming && <span className="caret" aria-hidden="true" />}
-    </div>
+    <RichText
+      text={text}
+      titles={titles}
+      className="font-serif text-[17px] leading-relaxed text-ink-2"
+      tail={streaming ? <span className="caret" aria-hidden="true" /> : null}
+    />
   );
 }
 
@@ -102,8 +77,7 @@ const urls = (sources: Source[]) => sources.map((s) => s.url);
 
 /** The question from an answer worth bringing to the doctor, if it has one. */
 function questionIn(text: string): string | null {
-  const q = text
-    .replace(CITE, "")
+  const q = plainText(text.replace(CITE, ""))
     .split(/(?<=[.?!])\s+|\n/)
     .map((s) => s.trim().replace(/^[-*\d.)\s"]+|"$/g, ""))
     .find((s) => s.endsWith("?") && s.length > 12);
@@ -232,7 +206,12 @@ export function AiHelper({
           else if (ev === "run" && onLead) saved = true;
         }
       }
-      if (saved) router.refresh();
+      if (saved) {
+        // The saved answer now shows under "What we found so far", so the panel drops its copy.
+        setTurns((t) => t.filter((x) => x.id !== aiId && x.id !== userTurn.id));
+        setToast("Saved under What we found so far.");
+        router.refresh();
+      }
     } catch {
       setNotice("Lost the connection to the AI helper. Try again.");
     } finally {
@@ -303,7 +282,7 @@ export function AiHelper({
                       type="button"
                       className="btn btn-mark"
                       onClick={() => {
-                        addToWork({ text: t.content.replace(CITE, "").replace(/\*\*/g, "").trim(), sources: urls(t.sources) });
+                        addToWork({ text: plainText(t.content.replace(CITE, "")).trim(), sources: urls(t.sources) });
                         setToast("Added to your work. It's tagged AI assisted.");
                       }}
                     >
@@ -326,7 +305,7 @@ export function AiHelper({
                     className="btn btn-secondary"
                     onClick={() =>
                       post(
-                        `From the AI helper${onLead ? ` on "${short}"` : ""}:\n${t.content.replace(CITE, "").trim()}`,
+                        `From the AI helper${onLead ? ` on "${short}"` : ""}:\n${plainText(t.content.replace(CITE, "")).trim()}`,
                         !onLead,
                         t.sources,
                         onLead ? "Shared in the case discussion." : "Shared in the discussion on this idea.",

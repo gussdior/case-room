@@ -42,7 +42,7 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
           </h1>
           <p className="mt-2 text-muted">
             {viewer
-              ? "Your profession decides which tasks are highlighted for you and which work you can check."
+              ? "Your profession decides which ideas are highlighted for you and which work you can check."
               : "Three quick things. You can add more later."}
           </p>
         </div>

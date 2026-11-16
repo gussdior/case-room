@@ -67,7 +67,7 @@ export function CasePreview({
         <div className="mt-7 rounded-[12px] bg-line/60 px-5 py-4">
           <h2 className="mb-1.5 text-[15px] font-bold">After the family approves you, you&apos;ll see</h2>
           <p className="text-sm text-muted">
-            The case details, leads, AI runs, what was tried and the discussion. Everything stays private until then.
+            The case details, the ideas being checked, what was found and the discussion. Everything stays private until then.
           </p>
         </div>
 

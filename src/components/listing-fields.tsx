@@ -136,7 +136,7 @@ export function ListingFields({
               {stage.trim() && <span>{stage.trim()}</span>}
             </div>
             <p className="font-display text-xl leading-tight font-medium">{goal.trim() || "Your one line goal shows here"}</p>
-            <p className="text-[13px] text-muted">Lead counts, professions needed and how many people help are added for you.</p>
+            <p className="text-[13px] text-muted">Idea counts, professions needed and how many people help are added for you.</p>
           </div>
         </div>
       )}

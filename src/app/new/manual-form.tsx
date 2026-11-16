@@ -106,7 +106,7 @@ export function ManualForm() {
 
       <SubmitButton variant="mark" className="self-start">Create case</SubmitButton>
       <p className="text-[13px] text-muted">
-        Right after you create it, the AI suggests leads and drafts the brief, marked as an AI draft until a person checks it.
+        Right after you create it, the AI suggests ideas to check and drafts the brief, marked as an AI draft until a person checks it.
       </p>
     </ActionForm>
   );

@@ -236,6 +236,8 @@ Rules:
 - Keep every [hidden] as it is. Never add names, birth dates, ID numbers, addresses or hospital and doctor names.
 - When documents disagree or something important is missing (for example whether a new biopsy was sent for gene testing), write the sentence you are unsure about and add a question for the family. At most 4 questions.
 - Treatments: one entry per treatment, in time order, with month and year when known.
+- In sentences you write, give dates the way people say them, like "November 2026" or "November 19, 2026". Only fields that ask for YYYY-MM or YYYY-MM-DD use that form.
+- Call the material "the documents" or "the case notes". Never say "pack".
 - Tasks: 4 to 7 small, concrete tasks volunteers can do in under 2 hours, each for one kind of expertise:
   doctor_nurse (explain results, check the summary), researcher (trials, papers), bioinformatics (gene reports),
   insurance_legal (coverage, costs, financial help), no_medical (organize questions, call trial sites).

@@ -7,6 +7,7 @@ import { scrubDeep } from "@/lib/drafts/scrub";
 import { EXPERTISE_ORDER, LEAD_KINDS, type Expertise, type LeadKind } from "@/lib/types";
 
 import { aiErrorMessage } from "@/lib/ai/errors";
+import { AI_WORDING_RULES } from "@/lib/time";
 const MODEL = "claude-sonnet-5-5";
 
 const TOOL: Anthropic.Tool = {
@@ -51,7 +52,8 @@ Rules:
 - Ideas to investigate and ask about, never advice. Never say the patient should take, start or stop anything.
 - Don't repeat anything listed as already looked into or ruled out, and don't repeat existing ideas.
 - Use plain words a family member can read. No names or ID numbers.
-- Be honest about long shots in the idea text.`;
+- Be honest about long shots in the idea text.
+${AI_WORDING_RULES}`;
 
 export type SuggestedLead = {
   title: string;

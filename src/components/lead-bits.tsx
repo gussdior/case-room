@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { AI_TOOL_LABEL, LEAD_STATUS_LABEL, roleLabel, type AiRun, type Lead, type LeadStatus, type Member } from "@/lib/types";
+import { AI_TOOL_LABEL, LEAD_STATUS_LABEL, personLabel, type AiRun, type Lead, type LeadStatus, type Member } from "@/lib/types";
 import { LeadCardActions } from "./lead-card-actions";
 import { RunActions } from "./run-actions";
+import { LongAnswer } from "./long-answer";
 import { safeHref } from "@/lib/safe-href";
 import { Avatar, ExpertiseBadge, PersonLink } from "./ui";
 
@@ -31,7 +32,7 @@ export function Faces({ ids, members, max = 4 }: { ids: string[]; members: Membe
         <span key={p.id} className="inline-flex items-center gap-1.5" title={p.name}>
           <Avatar person={p} size={24} />
           <span className="text-[13px] text-ink-2">
-            {p.name.replace("Dr. ", "").charAt(0).toUpperCase()}, {roleLabel(p)}
+            {personLabel(p)}
           </span>
         </span>
       ))}
@@ -173,9 +174,7 @@ export function RunItem({
         </Link>
       )}
       <p className="mt-2 mb-1.5 rounded-[10px] border-l-[3px] border-brand bg-[#f6f7f6] px-3 py-2.5 text-sm">{run.prompt}</p>
-      <p className="max-w-[68ch] font-serif text-base leading-normal whitespace-pre-line text-ink-2">
-        {run.result.length > 600 ? `${run.result.slice(0, 600).trimEnd()}...` : run.result}
-      </p>
+      <LongAnswer text={run.result} open={!!onLead && !!first} className="max-w-[68ch] font-serif text-base leading-normal text-ink-2" />
       {run.sources.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Sources">
           {run.sources.slice(0, 6).map((s, n) => (

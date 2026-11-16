@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Member, Section, Task } from "@/lib/types";
+import { RichText } from "./rich-text";
 
 type Props = {
   caseId: string;
@@ -51,7 +52,7 @@ export function Brief({ caseId, demo, sections, tasks, members, questions }: Pro
 
             {showBody && (
               <div className="flex flex-col gap-1.5">
-                <p className="max-w-[68ch] whitespace-pre-line font-serif text-lg leading-relaxed text-ink-2">{s.body}</p>
+                <RichText text={s.body} className="max-w-[68ch] font-serif text-lg leading-relaxed text-ink-2" />
                 {s.sourceNote && (
                   <span className="self-start rounded-full bg-mark-soft px-2.5 py-0.5 text-xs font-semibold text-mark-text">
                     {s.sourceNote}
@@ -67,7 +68,7 @@ export function Brief({ caseId, demo, sections, tasks, members, questions }: Pro
                 const by = (sub.checkedBy ?? []).map((c) => (c === "ai" ? "AI" : name(c)));
                 return (
                   <div key={t.id} className="flex flex-col gap-1.5">
-                    <p className="max-w-[68ch] whitespace-pre-line font-serif text-lg leading-relaxed text-ink-2">{sub.body}</p>
+                    <RichText text={sub.body} className="max-w-[68ch] font-serif text-lg leading-relaxed text-ink-2" />
                     <div className="flex flex-wrap gap-x-4 text-xs">
                       <span className="font-semibold text-ok">
                         Written by {name(sub.authorId)}, checked by {by.join(" and ")}

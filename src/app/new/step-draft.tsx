@@ -391,13 +391,13 @@ export function StepDraft({
 
         <section aria-labelledby="tasks-h" className="panel p-5">
           <h2 id="tasks-h" className="text-[15px] font-bold">
-            Tasks the AI suggests
+            First ideas the AI suggests
           </h2>
           <p className="mt-1 mb-2 text-[13px] text-muted">
             Untick any you don&apos;t want. Volunteers with the right background see them first.
           </p>
           {draft.suggestedTasks.length === 0 ? (
-            <p className="text-sm text-subtle">No tasks suggested. You can add tasks after the case opens.</p>
+            <p className="text-sm text-subtle">Nothing suggested. You can add ideas after the case opens.</p>
           ) : (
             <ul className="flex flex-col">
               {draft.suggestedTasks.map((t) => (

@@ -39,7 +39,7 @@ export function CaseAiBar({ caseId, demo }: { caseId: string; demo: boolean }) {
     <section aria-label="Use your own AI on this case" className="mt-7">
       <div className="flex flex-wrap items-center gap-3.5 rounded-[14px] bg-ink px-5 py-4 text-white">
         <h2 className="font-display text-xl font-medium">Use your own AI on this case</h2>
-        <ul className="flex flex-wrap gap-1.5" aria-label="What the case pack includes">
+        <ul className="flex flex-wrap gap-1.5" aria-label="What the case notes include">
           {INCLUDED.map((i) => (
             <li key={i} className="rounded-full bg-[#26303d] px-2.5 py-0.5 text-xs text-[#c9cfd8]">
               {i}

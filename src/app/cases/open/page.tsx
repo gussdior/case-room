@@ -103,10 +103,10 @@ export default async function OpenCasesPage({ searchParams }: PageProps<"/cases/
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <PublicCaseCard c={SAMPLE_PUBLIC_CASE} sample />
             <div className="flex flex-col justify-center gap-3 rounded-[14px] border border-dashed border-line-2 p-6">
-              <h2 className="font-display text-[22px] font-medium">No listed cases yet</h2>
+              <h2 className="font-display text-[22px] font-medium">The first real cases are opening soon.</h2>
               <p className="text-[15px] text-muted">
-                Families list a case when they are ready for help. Turn on case alerts in your profile and we&apos;ll tell you when one
-                needs your skills.
+                Families list a case when they are ready for help. Set up your profile, turn on case alerts there, and we&apos;ll tell
+                you when one needs your skills.
               </p>
               <div className="flex flex-wrap gap-2.5">
                 <Link href="/onboarding" className={btn.mark}>

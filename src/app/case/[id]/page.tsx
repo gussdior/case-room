@@ -15,7 +15,7 @@ import { loadLeads } from "@/lib/db-leads";
 import { ideasFor, openSeats, splitGoal, type Idea, type IdeaGroup } from "@/lib/ideas";
 import { loadShareCard } from "@/lib/share-card";
 import { SHARE_ROLES, cardVersion } from "@/lib/share-text";
-import { CASE_SAFETY_LINE, EXPERTISE_LABEL, caseFacts, roleLabel, type Member } from "@/lib/types";
+import { CASE_SAFETY_LINE, EXPERTISE_LABEL, caseFacts, personLabel, roleLabel, type Member } from "@/lib/types";
 
 const GROUPS: { key: IdeaGroup; label: string; dot: string }[] = [
   { key: "needs", label: "Needs someone", dot: "bg-[#e0b43a]" },
@@ -34,7 +34,7 @@ function PartNumber({ n }: { n: number }) {
 }
 
 /** One idea in the list. The title opens it; the button takes it. */
-function IdeaRow({ idea, caseId, demo, canTake }: { idea: Idea; caseId: string; demo: boolean; canTake: boolean }) {
+function IdeaRow({ idea, caseId, demo, canTake, viewerId }: { idea: Idea; caseId: string; demo: boolean; canTake: boolean; viewerId?: string }) {
   const done = idea.group === "done";
   return (
     <li className={`row-link relative flex-wrap ${done ? "bg-[#f6f7f6]" : ""}`}>
@@ -52,7 +52,8 @@ function IdeaRow({ idea, caseId, demo, canTake }: { idea: Idea; caseId: string; 
         idea.people.slice(0, 2).map((p) => (
           <span key={p.id} className="inline-flex items-center gap-1.5 text-[13px] whitespace-nowrap text-muted">
             <Avatar person={p} size={26} />
-            {initial(p)}, {roleLabel(p)}
+            {personLabel(p)}
+            {p.id === viewerId ? " (you)" : ""}
           </span>
         ))}
       {idea.group === "needs" && canTake ? (
@@ -151,18 +152,13 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
       </section>
 
       <div className="mt-9 grid items-start gap-9 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <section aria-labelledby="work-h" className="min-w-0">
+        <section aria-labelledby="work-h" className="relative min-w-0">
           <div className="mb-3.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-2">
             <PartNumber n={2} />
             <h2 id="work-h" className="font-display text-[26px] font-medium">
               The work
             </h2>
             <span className="text-sm text-muted">Ideas the team is checking</span>
-            {ideas.length > 0 && (
-              <div className="ml-auto flex w-full justify-end sm:w-auto">
-                <AddIdea caseId={room.id} demo={demo} />
-              </div>
-            )}
           </div>
 
           {ideas.length === 0 ? (
@@ -177,6 +173,7 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
             </div>
           ) : (
             <>
+              <AddIdea caseId={room.id} demo={demo} corner />
               {isAdmin && !demo && !aiSuggested && (
                 <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white px-4 py-3 text-sm">
                   <span className="min-w-0 flex-[1_1_240px]">Let the AI read the case and suggest a few more ideas.</span>
@@ -194,7 +191,7 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
                     </h3>
                     <ul className="flex flex-col gap-2">
                       {rows.map((i) => (
-                        <IdeaRow key={i.key} idea={i} caseId={room.id} demo={demo} canTake={demo || !i.people.some((p) => p.id === v?.id)} />
+                        <IdeaRow key={i.key} idea={i} caseId={room.id} demo={demo} canTake={demo || !i.people.some((p) => p.id === v?.id)} viewerId={v?.id} />
                       ))}
                     </ul>
                   </div>

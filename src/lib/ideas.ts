@@ -72,9 +72,19 @@ function fromTask(caseId: string, t: Task, members: Member[]): Idea {
   };
 }
 
-/** Everything the team is checking, as one list. */
+/** Once the AI has suggested this many ideas, the generic starter work nobody took stops showing. */
+const AI_IDEAS_ENOUGH = 4;
+
+/** Starter work that nobody has touched: open, no owner, no helpers, nothing written. */
+const untouched = (t: Task) =>
+  t.status === "open" && !t.ownerId && t.submissions.length === 0 && t.helperIds.length === 0 && (t.requestedHelperIds?.length ?? 0) === 0;
+
+/** Everything the team is checking, as one list.
+ *  Starter work overlaps with the AI's ideas, so untouched starters are left out once the AI has suggested enough. Nothing is deleted. */
 export function ideasFor(room: CaseRoom, leads: Lead[]): Idea[] {
-  return [...leads.map((l) => fromLead(room.id, l, room.members)), ...room.tasks.map((t) => fromTask(room.id, t, room.members))];
+  const enough = leads.filter((l) => l.aiSuggested).length >= AI_IDEAS_ENOUGH;
+  const tasks = enough ? room.tasks.filter((t) => !untouched(t)) : room.tasks;
+  return [...leads.map((l) => fromLead(room.id, l, room.members)), ...tasks.map((t) => fromTask(room.id, t, room.members))];
 }
 
 /** Professions with nobody on the case yet. */

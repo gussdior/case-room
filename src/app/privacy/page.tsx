@@ -8,7 +8,7 @@ export default function PrivacyPage() {
       <H2>What we store</H2>
       <ul>
         <li>Your account: email, the name you choose, your profession, and anything you add to your profile.</li>
-        <li>Cases: what the family writes, the AI draft, leads, findings, messages and AI runs.</li>
+        <li>Cases: what the family writes, the AI draft, the ideas being checked, what was found, messages and AI answers.</li>
         <li>Uploaded documents, in private storage.</li>
       </ul>
       <H2>Who can see a case</H2>

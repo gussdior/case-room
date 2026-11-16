@@ -6,6 +6,7 @@ import { scrub } from "@/lib/drafts/scrub";
 import { AGE_RANGE_LABEL, EXPERTISE_LABEL, EXPERTISE_ORDER, type AgeRange, type Expertise } from "@/lib/types";
 
 import { aiErrorMessage } from "@/lib/ai/errors";
+import { AI_WORDING_RULES } from "@/lib/time";
 const MODEL = "claude-sonnet-5-5";
 export const LINK_TOKEN = "{LINK}";
 
@@ -85,7 +86,8 @@ Also write one Reddit text post, separate from the places:
 - No link, web address or site name in the post body. Many subreddits remove posts that carry links.
 - Ask for research help and for help writing questions for the doctor. Never ask what treatment the patient should take, and never ask for medical advice.
 - Add a separate short comment that holds ${LINK_TOKEN} exactly once, to post only if someone asks or the subreddit allows links.
-Never include names, exact ages, cities, hospitals, doctor names, dates of birth or ID numbers. Never promise a cure or results.`;
+Never include names, exact ages, cities, hospitals, doctor names, dates of birth or ID numbers. Never promise a cure or results.
+${AI_WORDING_RULES}`;
 
 export type Place = { place: string; kind: OutreachKind; skill: Expertise; why: string; community: boolean; post: string };
 export type RedditPost = { place: string; skill: Expertise; why: string; post: string; comment: string };
