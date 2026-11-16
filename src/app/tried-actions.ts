@@ -103,7 +103,7 @@ export async function logFinding(caseId: string, _: Result, form: FormData): Pro
   const sources = urls(text(form, "sources", 4000));
   if (title.length < 3) return { error: "Give it a short title." };
   if (summary.length < 3) return { error: "Say what you found, in a sentence or two." };
-  if (!STATUSES.includes(status)) return { error: "Pick: may fit her, ruled out, or waiting on results." };
+  if (!STATUSES.includes(status)) return { error: "Pick: may fit the patient, ruled out, or waiting on results." };
   if (sources === "invalid") return { error: "Each source must be a full link starting with https://" };
   if (sources.length === 0) return { error: "Add at least one source link." };
   const supabase = await createClient();

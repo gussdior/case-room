@@ -19,8 +19,8 @@ export type ShareCard = {
 export const SAMPLE_SHARE_CARD: ShareCard = {
   cancerType: SAMPLE_CASE.cancerType ?? null,
   cancerStage: SAMPLE_CASE.cancerStage ?? null,
-  needed: ["doctor_nurse"],
-  seats: ["researcher", "bioinformatics"],
+  needed: ["insurance_legal"],
+  seats: ["doctor_nurse", "researcher", "bioinformatics"],
   publicPreview: true,
 };
 

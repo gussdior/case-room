@@ -1,19 +1,70 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CaseAiBar } from "@/components/case-ai-bar";
-import { DayOneStrip } from "@/components/day-one";
+import { AddIdea } from "@/components/add-idea";
 import { CasePreview, PrivateCase } from "@/components/case-preview";
 import { JoinPanel } from "@/components/join-panel";
-import { LeadCard, RailHeading, RunItem } from "@/components/lead-bits";
-import { AddLeadForm } from "@/components/lead-forms";
-import { SuggestLeadsButton } from "@/components/suggest-leads";
-import { toolsForCase } from "@/lib/ai-tools";
+import { ShareMenu } from "@/components/share-menu";
+import { SuggestIdeas } from "@/components/suggest-ideas";
+import { TakeIdea } from "@/components/take-idea";
+import { Avatar, ExpertiseBadge } from "@/components/ui";
 import { getViewer } from "@/lib/auth";
-import { getRoom, volunteers } from "@/lib/data";
-import { loadMyQuestions, loadPublicQuestions } from "@/lib/db-questions";
-import { SAMPLE_PUBLIC_QUESTIONS, samplePreviewTeaser } from "@/lib/sample-case";
-import { loadLeads, loadRuns } from "@/lib/db-leads";
-import { AI_DRAFT_LABEL, caseFacts } from "@/lib/types";
+import { approvedMembers, getRoom, pendingRequests } from "@/lib/data";
+import { loadMyQuestions, loadPublicQuestions, loadTeamQuestions } from "@/lib/db-questions";
+import { SAMPLE_PUBLIC_QUESTIONS, SAMPLE_VISITOR_QUESTIONS, samplePreviewTeaser } from "@/lib/sample-case";
+import { loadLeads } from "@/lib/db-leads";
+import { ideasFor, openSeats, splitGoal, type Idea, type IdeaGroup } from "@/lib/ideas";
+import { loadShareCard } from "@/lib/share-card";
+import { SHARE_ROLES, cardVersion } from "@/lib/share-text";
+import { CASE_SAFETY_LINE, EXPERTISE_LABEL, caseFacts, roleLabel, type Member } from "@/lib/types";
+
+const GROUPS: { key: IdeaGroup; label: string; dot: string }[] = [
+  { key: "needs", label: "Needs someone", dot: "bg-[#e0b43a]" },
+  { key: "progress", label: "In progress", dot: "bg-brand" },
+  { key: "done", label: "Done", dot: "bg-ok" },
+];
+
+const initial = (m: Member) => m.name.replace("Dr. ", "").charAt(0).toUpperCase();
+
+function PartNumber({ n }: { n: number }) {
+  return (
+    <span aria-hidden="true" className="grid h-[26px] w-[26px] flex-none place-items-center self-center rounded-full bg-ink text-[13px] font-bold text-white">
+      {n}
+    </span>
+  );
+}
+
+/** One idea in the list. The title opens it; the button takes it. */
+function IdeaRow({ idea, caseId, demo, canTake }: { idea: Idea; caseId: string; demo: boolean; canTake: boolean }) {
+  const done = idea.group === "done";
+  return (
+    <li className={`row-link relative flex-wrap ${done ? "bg-[#f6f7f6]" : ""}`}>
+      <div className="flex min-w-0 flex-[1_1_260px] flex-col">
+        <Link
+          href={idea.href}
+          className={`text-[15px] leading-snug font-semibold no-underline after:absolute after:inset-0 after:rounded-[10px] ${done ? "text-muted hover:text-muted" : "text-ink hover:text-ink"}`}
+        >
+          {idea.title}
+        </Link>
+        {idea.line && <span className="text-[13px] text-muted">{idea.line}</span>}
+      </div>
+      {idea.group === "needs" && idea.expertise && <ExpertiseBadge expertise={idea.expertise} />}
+      {idea.group === "progress" &&
+        idea.people.slice(0, 2).map((p) => (
+          <span key={p.id} className="inline-flex items-center gap-1.5 text-[13px] whitespace-nowrap text-muted">
+            <Avatar person={p} size={26} />
+            {initial(p)}, {roleLabel(p)}
+          </span>
+        ))}
+      {idea.group === "needs" && canTake ? (
+        <TakeIdea caseId={caseId} kind={idea.kind} id={idea.id} demo={demo} />
+      ) : (
+        <span aria-hidden="true" className="btn btn-secondary btn-sm">
+          Open
+        </span>
+      )}
+    </li>
+  );
+}
 
 export default async function LeadsPage({ params, searchParams }: PageProps<"/case/[id]">) {
   const { id } = await params;
@@ -38,162 +89,218 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/ca
     return <CasePreview teaser={samplePreviewTeaser()} viewer={null} questions={SAMPLE_PUBLIC_QUESTIONS} demo />;
   }
   const demo = room.viewer === null;
-  const [leads, runs] = await Promise.all([loadLeads(room.id), loadRuns(room.id, { limit: 3 })]);
-  const people = volunteers(room).length;
-  const openKinds = leads.filter((l) => l.status !== "ruled_out").map((l) => l.kind);
-  const tools = toolsForCase(openKinds, 4);
-  const canSuggest = demo || !!room.viewer?.isAdmin;
+  const v = room.viewer;
+  const isAdmin = demo || !!v?.isAdmin;
+  const [leads, card, questions] = await Promise.all([
+    loadLeads(room.id),
+    isAdmin ? loadShareCard(room.id) : Promise.resolve(null),
+    demo ? Promise.resolve(SAMPLE_VISITOR_QUESTIONS) : v?.isAdmin ? loadTeamQuestions(room.id) : Promise.resolve([]),
+  ]);
+  const ideas = ideasFor(room, leads);
   const facts = caseFacts(room);
-  const aiLeads = leads.filter((l) => l.aiSuggested).length;
-  const draftedParts = room.sections.filter((s) => s.body.trim() && (s.sourceNote === AI_DRAFT_LABEL || s.sourceNote?.startsWith("From the family"))).length;
-  // The strip is for day one: it goes away once a person has checked any part of the brief.
-  const humanChecked = room.tasks.some((t) => t.status === "checked");
-  const showDayOne = demo || (!humanChecked && (aiLeads + draftedParts > 0 || !!room.viewer?.isAdmin));
+  const goal = splitGoal(room.goal);
+  const approved = approvedMembers(room);
+  const family = approved.filter((m) => m.role === "creator" || m.role === "family");
+  const helpers = approved.filter((m) => m.role !== "creator" && m.role !== "family");
+  const seats = openSeats(room);
+  const waiting = isAdmin ? pendingRequests(room).length : 0;
+  const newQuestions = isAdmin ? questions.filter((q) => !q.reply).length : 0;
+  const checkedParts = room.sections.filter((s) => s.status === "checked").length;
+  const aiSuggested = leads.some((l) => l.aiSuggested);
+  const version = cardVersion([card?.cancerType, card?.cancerStage, ...(card?.needed ?? []), "/", ...(card?.seats ?? [])]);
+  const workingOn = (m: Member) => ideas.find((i) => i.group === "progress" && i.people.some((p) => p.id === m.id))?.title;
+  const short = (t: string) => (t.length > 38 ? `${t.slice(0, 36).trimEnd()}...` : t);
 
   return (
-    <div className="flex flex-col">
-      <section aria-label="Case" className="flex flex-wrap items-end gap-x-10 gap-y-4">
-        <div className="min-w-0 flex-[1_1_560px]">
-          <h1 className="max-w-[860px] font-display text-[34px] leading-[1.1] font-medium tracking-[-0.015em] sm:text-[44px]">
-            {room.goal}
+    <div className="mx-auto flex max-w-[1180px] flex-col">
+      <section aria-labelledby="goal-h" className="panel grid items-end gap-6 rounded-2xl px-5 py-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-8 sm:py-7">
+        <div className="min-w-0">
+          <div className="mb-2.5 flex items-center gap-2.5">
+            <PartNumber n={1} />
+            <span className="text-sm font-bold">The goal</span>
+          </div>
+          <h1 id="goal-h" className="font-display text-[30px] leading-[1.1] font-medium tracking-[-0.015em] sm:text-[40px]">
+            {goal.head}
+            <span className="hl" data-on="true">
+              {goal.tail}
+            </span>
           </h1>
-          {facts.length > 0 ? (
+          {facts.length > 0 && (
             <ul aria-label="Case facts" className="mt-3.5 flex flex-wrap gap-2">
               {facts.map((f) => (
-                <li key={f} className="rounded-full bg-[#e7eae7] px-3 py-1 text-sm text-ink">
+                <li key={f} className="rounded-full bg-soft px-3 py-1 text-sm text-ink">
                   {f}
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="mt-3 text-sm text-muted">
-              {people > 0 ? `${people} ${people === 1 ? "person is" : "people are"} helping.` : "No helpers yet."}
-            </p>
           )}
+          <p className="mt-2.5 text-[13px] text-muted">{CASE_SAFETY_LINE}</p>
         </div>
-        <div className="flex flex-none flex-col items-end gap-3">
-          {room.visitInDays !== null && (
-            <div className="text-right">
-              <strong className="block font-display text-[40px] leading-none font-medium">
-                {room.visitInDays > 0
-                  ? `${room.visitInDays} day${room.visitInDays === 1 ? "" : "s"}`
-                  : room.visitInDays === 0
-                    ? "Today"
-                    : "Passed"}
-              </strong>
-              <span className="text-sm text-muted">until the doctor visit</span>
-            </div>
-          )}
-        </div>
+        {room.visitInDays !== null && (
+          <div className="sm:text-right">
+            <strong className="block font-display text-[40px] leading-none font-medium">
+              {room.visitInDays > 0
+                ? `${room.visitInDays} day${room.visitInDays === 1 ? "" : "s"}`
+                : room.visitInDays === 0
+                  ? "Today"
+                  : "Passed"}
+            </strong>
+            <span className="text-sm text-muted">{room.visitInDays >= 0 ? "until the doctor visit" : "the doctor visit date"}</span>
+          </div>
+        )}
       </section>
 
-      <CaseAiBar caseId={room.id} demo={demo} />
-
-      {showDayOne && (
-        <DayOneStrip
-          caseId={room.id}
-          demo={demo}
-          isAdmin={!!room.viewer?.isAdmin}
-          leads={aiLeads}
-          sections={draftedParts}
-          autoStart={sp.new === "1"}
-        />
-      )}
-
-      <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <section aria-labelledby="leads-h" className="min-w-0">
-          <div className="mb-3.5 flex flex-wrap items-baseline gap-x-3 gap-y-2">
-            <h2 id="leads-h" className="font-display text-[28px] font-medium">
-              Leads
+      <div className="mt-9 grid items-start gap-9 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <section aria-labelledby="work-h" className="min-w-0">
+          <div className="mb-3.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-2">
+            <PartNumber n={2} />
+            <h2 id="work-h" className="font-display text-[26px] font-medium">
+              The work
             </h2>
             <span className="text-sm text-muted">Ideas the team is checking</span>
-            <a href="#add-lead" className="btn btn-secondary ml-auto">
-              Add a lead
-            </a>
+            {ideas.length > 0 && (
+              <div className="ml-auto flex w-full justify-end sm:w-auto">
+                <AddIdea caseId={room.id} demo={demo} />
+              </div>
+            )}
           </div>
 
-          {leads.length === 0 ? (
+          {ideas.length === 0 ? (
             <div className="panel flex flex-col items-start gap-3 p-6">
-              <h3 className="font-display text-xl font-medium">No leads yet</h3>
-              <p className="max-w-[60ch] text-sm text-muted">
-                A lead is one idea to check: a trial, an existing drug used a new way, a test worth asking about.
-                {canSuggest ? " Let the AI read the case and suggest a few, or add your own below." : " Add the first one below."}
+              <p className="max-w-[56ch] text-[15px]">
+                {isAdmin ? "No ideas yet. Let the AI read the case and suggest a few, or add your own." : "No ideas yet. Add the first one."}
               </p>
-              {canSuggest && <SuggestLeadsButton caseId={room.id} demo={demo} primary />}
+              <div className="flex flex-wrap items-start gap-2">
+                {isAdmin && <SuggestIdeas caseId={room.id} demo={demo} primary autoStart={sp.new === "1"} />}
+                <AddIdea caseId={room.id} demo={demo} primary={!isAdmin} />
+              </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              {leads.map((l) => (
-                <LeadCard key={l.id} caseId={room.id} lead={l} members={room.members} demo={demo} viewerId={room.viewer?.id} />
-              ))}
-            </div>
-          )}
-
-          <details id="add-lead" className="panel group mt-5 scroll-mt-6 p-5 sm:p-6">
-            <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center justify-between gap-3">
-              <span>
-                <span className="block font-display text-xl font-medium">Add a lead</span>
-                <span className="text-sm text-muted">Found something worth checking? Add it so others can run AI on it too.</span>
-              </span>
-              <span className="text-sm font-semibold text-brand group-open:hidden">Add a lead</span>
-            </summary>
-            <div className="mt-4 border-t border-line pt-4">
-              <AddLeadForm caseId={room.id} demo={demo} />
-            </div>
-          </details>
-          {canSuggest && leads.length > 0 && (
-            <div className="mt-4">
-              <SuggestLeadsButton caseId={room.id} demo={demo} />
-            </div>
+            <>
+              {isAdmin && !demo && !aiSuggested && (
+                <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white px-4 py-3 text-sm">
+                  <span className="min-w-0 flex-[1_1_240px]">Let the AI read the case and suggest a few more ideas.</span>
+                  <SuggestIdeas caseId={room.id} demo={demo} autoStart={sp.new === "1"} />
+                </div>
+              )}
+              {GROUPS.map((g) => {
+                const rows = ideas.filter((i) => i.group === g.key);
+                if (rows.length === 0) return null;
+                return (
+                  <div key={g.key} className="mb-5 last:mb-0">
+                    <h3 className="mb-2 flex items-center gap-2 text-[13px] font-bold">
+                      <i aria-hidden="true" className={`h-[9px] w-[9px] rounded-full ${g.dot}`} />
+                      {g.label} <span className="font-medium text-muted">{rows.length}</span>
+                    </h3>
+                    <ul className="flex flex-col gap-2">
+                      {rows.map((i) => (
+                        <IdeaRow key={i.key} idea={i} caseId={room.id} demo={demo} canTake={demo || !i.people.some((p) => p.id === v?.id)} />
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </>
           )}
         </section>
 
-        <aside className="flex min-w-0 flex-col gap-9">
-          <section aria-label="Latest AI runs">
-            <div className="flex items-baseline justify-between">
-              <RailHeading>Latest AI runs</RailHeading>
-              <Link href={`/case/${room.id}/runs`} className="text-[13px] font-semibold">
-                See all
-              </Link>
-            </div>
-            {runs.length === 0 ? (
-              <p className="text-sm text-muted">
-                No runs yet. Ask the AI on a lead, or copy the case into your own AI and paste back what it found.
-              </p>
-            ) : (
-              runs.map((r, i) => (
-                <RunItem key={r.id} caseId={room.id} run={r} members={room.members} demo={demo} viewerId={room.viewer?.id} showLead first={i === 0} />
-              ))
-            )}
-          </section>
-
-          <section aria-label="AI tools for this case">
-            <RailHeading>AI tools for this case</RailHeading>
-            <ul className="flex flex-col">
-              {tools.map((t) => (
-                <li key={t.id}>
-                  <div className="-mx-3 flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-hover">
-                    <span aria-hidden="true" className={`grid h-[34px] w-[34px] flex-none place-items-center rounded-[10px] text-[13px] font-bold ${t.tone}`}>
-                      {t.icon}
-                    </span>
-                    <div className="min-w-0 text-sm">
-                      {t.url ? (
-                        <a href={t.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-ink no-underline hover:text-brand hover:underline">
-                          {t.name}
-                        </a>
+        <aside aria-labelledby="people-h" className="min-w-0">
+          <div className="mb-3.5 flex items-baseline gap-2.5">
+            <PartNumber n={3} />
+            <h2 id="people-h" className="font-display text-[26px] font-medium">
+              The people
+            </h2>
+          </div>
+          <ul className="panel rounded-2xl px-[18px] py-2">
+            {family.map((m) => (
+              <li key={m.id} className="flex items-center gap-3 border-t border-line py-3 first:border-t-0">
+                <span aria-hidden="true" className="grid h-9 w-9 flex-none place-items-center rounded-full bg-hover text-sm font-bold text-ink">
+                  F
+                </span>
+                <div className="min-w-0">
+                  <b className="block text-sm">Family{m.id === v?.id ? " (you)" : ""}</b>
+                  <span className="text-[13px] text-muted">Started this case</span>
+                </div>
+              </li>
+            ))}
+            {helpers.map((m) => {
+              const on = workingOn(m);
+              return (
+                <li key={m.id} className="flex items-center gap-3 border-t border-line py-3 first:border-t-0">
+                  <Avatar person={m} size={36} />
+                  <div className="min-w-0">
+                    <b className="block text-sm">
+                      {/^[0-9a-f-]{36}$/i.test(m.id) ? (
+                        <Link href={`/profile/${m.id}`} className="text-ink no-underline hover:text-brand hover:underline hover:underline-offset-4">
+                          {initial(m)}, {roleLabel(m)}
+                        </Link>
                       ) : (
-                        <b className="font-semibold">{t.name}</b>
+                        <>
+                          {initial(m)}, {roleLabel(m)}
+                        </>
                       )}
-                      <span className="block text-xs text-muted">{t.does}</span>
-                      {t.builtIn && <span className="text-[11px] font-semibold text-ok">Built in</span>}
-                      {t.note && <span className="text-[11px] font-semibold text-mark-text">{t.note}</span>}
-                    </div>
+                      {m.id === v?.id ? " (you)" : ""}
+                    </b>
+                    <span className="block truncate text-[13px] text-muted">{on ? `On: ${short(on)}` : "Not on an idea yet"}</span>
                   </div>
                 </li>
-              ))}
-            </ul>
-            <Link href={`/case/${room.id}/runs#tools`} className="mt-1 inline-block text-[13px] font-semibold">
-              All tools
+              );
+            })}
+            {seats.map((e) => {
+              const slug = SHARE_ROLES.find((r) => r.expertise === e)?.slug ?? "anyone";
+              return (
+                <li key={e} className="flex items-center gap-3 border-t border-line py-3 first:border-t-0">
+                  <span aria-hidden="true" className="grid h-9 w-9 flex-none place-items-center rounded-full border-2 border-dashed border-mark-edge bg-mark-tint text-sm font-bold text-mark-text">
+                    ?
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <b className="block text-sm">Open seat</b>
+                    <span className="text-[13px] text-muted">{EXPERTISE_LABEL[e]}</span>
+                  </div>
+                  {isAdmin && (
+                    <ShareMenu
+                      caseId={room.id}
+                      suggested={slug}
+                      version={version}
+                      previewOn={demo || !!room.publicPreview}
+                      canTurnOn={v?.role === "creator"}
+                      buttonClass="btn btn-secondary btn-sm"
+                      buttonLabel={`Share to find: ${EXPERTISE_LABEL[e]}`}
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {(waiting > 0 || newQuestions > 0) && (
+            <p className="mt-2.5 flex flex-col gap-1 text-[13px] text-muted">
+              {waiting > 0 && (
+                <span>
+                  {waiting} waiting to join.{" "}
+                  <Link href={`/case/${room.id}/people`} className="font-semibold">
+                    Review
+                  </Link>
+                </span>
+              )}
+              {newQuestions > 0 && (
+                <span>
+                  {newQuestions} new {newQuestions === 1 ? "question" : "questions"}.{" "}
+                  <Link href={`/case/${room.id}/people#questions`} className="font-semibold">
+                    Review
+                  </Link>
+                </span>
+              )}
+            </p>
+          )}
+
+          <section aria-label="For the doctor" className="mt-4 rounded-[14px] bg-ink px-[18px] py-4 text-white">
+            <b className="block font-display text-[19px] font-medium">For the doctor</b>
+            <p className="mt-1 mb-3 text-[13px] text-[#c9cfd8]">
+              {checkedParts} of {room.sections.length} parts {checkedParts === 1 ? "is" : "are"} checked and ready.
+            </p>
+            <Link href={`/case/${room.id}/doctor`} className="btn btn-mark btn-sm">
+              Read the brief
             </Link>
           </section>
         </aside>

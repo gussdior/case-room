@@ -17,7 +17,7 @@ export function ManualForm() {
           minLength={10}
           maxLength={200}
           aria-describedby="goal-help"
-          placeholder="Find her next options now that the first pill stopped working"
+          placeholder="Find the next options now that the first pill stopped working"
           className={inputClass}
         />
         <p id="goal-help" className="text-[13px] text-muted">

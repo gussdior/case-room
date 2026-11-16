@@ -77,7 +77,7 @@ export default async function TriedPage({ params, searchParams }: PageProps<"/ca
         <div className="min-w-0 flex-[1_1_520px]">
           <h1 className="font-display text-[38px] leading-[1.1] font-medium tracking-[-0.015em] sm:text-[44px]">What we tried</h1>
           <p className="mt-3 max-w-[640px] text-base text-muted">
-            Her treatments so far, and everything the team has looked into. Check here before you start, so nobody repeats work.
+            The patient&apos;s treatments so far, and everything the team has looked into. Check here before you start, so nobody repeats work.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -95,7 +95,7 @@ export default async function TriedPage({ params, searchParams }: PageProps<"/ca
       <div className="mt-8 grid items-start gap-10 lg:grid-cols-[400px_minmax(0,1fr)]">
         <section aria-labelledby="treatments">
           <h2 id="treatments" className="font-display text-[26px] font-medium">
-            Her treatments so far
+            The patient&apos;s treatments so far
           </h2>
           <p className="mt-1 mb-5 text-sm text-muted">Added by the family or the case creator.</p>
 
@@ -104,7 +104,7 @@ export default async function TriedPage({ params, searchParams }: PageProps<"/ca
               <p className="font-semibold text-ink">No treatments added yet.</p>
               <p className="mt-1">
                 {canEditTreatments
-                  ? "Start with the diagnosis, then each treatment and how it went. Volunteers use this so they don't suggest something she already had."
+                  ? "Start with the diagnosis, then each treatment and how it went. Volunteers use this so they don't suggest something the patient already had."
                   : "The family or case creator adds these. Ask in the discussion if you need them."}
               </p>
             </div>

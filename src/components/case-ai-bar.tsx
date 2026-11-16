@@ -66,7 +66,7 @@ export function CaseAiBar({ caseId, demo }: { caseId: string; demo: boolean }) {
       {open && (
         <div className="fade-in panel mt-3 p-5 sm:p-6">
           <h3 className="mb-1 font-display text-xl font-medium">Paste what your AI found</h3>
-          <p className="mb-4 text-sm text-muted">It shows up in Latest AI runs. To file it under one idea, paste it on that lead instead.</p>
+          <p className="mb-4 text-sm text-muted">To file it under one idea, paste it on that idea instead.</p>
           <PasteRun caseId={caseId} demo={demo} />
         </div>
       )}

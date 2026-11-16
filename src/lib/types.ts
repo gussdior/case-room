@@ -214,7 +214,7 @@ export type Finding = {
 };
 
 export const FINDING_STATUS_LABEL: Record<FindingStatus, string> = {
-  may_fit: "May fit her",
+  may_fit: "May fit the patient",
   ruled_out: "Ruled out",
   waiting: "Waiting on results",
 };

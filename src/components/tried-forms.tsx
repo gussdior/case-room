@@ -31,7 +31,7 @@ export function LogFindingForm({
         <input id={`${idPrefix}-title`} name="title" required minLength={3} maxLength={200} defaultValue={defaults?.title} placeholder="e.g. Trial of a MET pill plus osimertinib" className={inputClass} />
       </div>
       <fieldset className="flex flex-col gap-1.5">
-        <legend className={`${labelClass} mb-1.5`}>Does it fit her?</legend>
+        <legend className={`${labelClass} mb-1.5`}>Does it fit the patient?</legend>
         <div className="flex flex-wrap gap-1.5">
           {(["may_fit", "ruled_out", "waiting"] as const).map((s) => (
             <label key={s} className={pill}>

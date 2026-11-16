@@ -20,7 +20,7 @@ export const AI_TOOLS: AiToolInfo[] = [
   {
     id: "case_room_ai",
     name: "Case Room AI",
-    does: "Searches trials, papers and preprints with her case in mind",
+    does: "Searches trials, papers and preprints with this case in mind",
     suits: ["doctor_nurse", "researcher", "bioinformatics", "insurance_legal", "no_medical"],
     kinds: [],
     builtIn: true,

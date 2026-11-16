@@ -8,7 +8,7 @@ import { ActionForm, SubmitButton, inputClass, labelClass } from "./forms";
 
 export function AddLeadForm({ caseId, demo }: { caseId: string; demo: boolean }) {
   if (demo)
-    return <p className="text-sm text-muted">This is a sample case. Sign in and join a real case to add leads.</p>;
+    return <p className="text-sm text-muted">This is a sample case. Sign in and join a real case to add ideas.</p>;
   return (
     <ActionForm action={addLead.bind(null, caseId)} className="flex flex-col gap-3.5">
       <div className="flex flex-col gap-1.5">
@@ -38,7 +38,7 @@ export function AddLeadForm({ caseId, demo }: { caseId: string; demo: boolean })
         <label htmlFor="ld-cond" className={labelClass}>
           What would need to be true <span className="font-normal text-muted">(one per line, optional)</span>
         </label>
-        <textarea id="ld-cond" name="conditions" rows={3} maxLength={2000} placeholder={"Her biopsy shows the change\nA trial site is within reach"} className={`${inputClass} resize-y`} />
+        <textarea id="ld-cond" name="conditions" rows={3} maxLength={2000} placeholder={"The biopsy shows the change\nA trial site is within reach"} className={`${inputClass} resize-y`} />
       </div>
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
         <div className="flex flex-col gap-1.5">
@@ -62,7 +62,7 @@ export function AddLeadForm({ caseId, demo }: { caseId: string; demo: boolean })
         </div>
       </div>
       <SubmitButton variant="mark" className="self-start">
-        Add the lead
+        Add the idea
       </SubmitButton>
     </ActionForm>
   );
@@ -88,7 +88,7 @@ export function LeadConditions({
   const [, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   if (items.length === 0)
-    return <p className="text-sm text-muted">Nothing listed yet. Whoever added the lead can add what would need to be true.</p>;
+    return <p className="text-sm text-muted">Nothing listed yet. Whoever added the idea can add what would need to be true.</p>;
   return (
     <>
       <ol className="flex flex-col gap-1">
@@ -164,7 +164,7 @@ export function LeadStatusControl({
   const out = status === "ruled_out";
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Lead status">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Idea status">
         {MOVES.map((s) => (
           <button
             key={s}
@@ -173,7 +173,7 @@ export function LeadStatusControl({
             disabled={pending || (out && !isAdmin)}
             onClick={() => {
               setMsg(null);
-              if (demo) return setMsg("This is a sample case. Sign in to change real leads.");
+              if (demo) return setMsg("This is a sample case. Sign in to change real ideas.");
               start(async () => {
                 const r = await setLeadStatus(caseId, leadId, s);
                 if (r?.error) setMsg(r.error);
@@ -197,7 +197,7 @@ export function LeadStatusControl({
             Rule it out
           </summary>
           {demo ? (
-            <p className="mt-2 text-sm text-muted">This is a sample case. Sign in to rule out real leads.</p>
+            <p className="mt-2 text-sm text-muted">This is a sample case. Sign in to rule out real ideas.</p>
           ) : (
             <ActionForm action={ruleOutLead.bind(null, caseId, leadId)} className="mt-3 flex flex-col gap-3" resetOnSuccess={false}>
               <div className="flex flex-col gap-1.5">

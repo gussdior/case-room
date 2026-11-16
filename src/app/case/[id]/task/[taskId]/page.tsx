@@ -6,7 +6,7 @@ import { DemoButton } from "@/components/demo-button";
 import { Composer, MessageItem } from "@/components/message-list";
 import { TaskHeaderActions, TaskWorkPanels } from "@/components/task-actions";
 import { TaskTabs } from "@/components/task-tabs";
-import { Avatar, Badge, ExpertiseBadge, PersonLink, btn } from "@/components/ui";
+import { Avatar, Badge, ExpertiseBadge, PersonLink } from "@/components/ui";
 import { WorkForm } from "@/components/work-form";
 import { getRoom, memberById, taskMessages } from "@/lib/data";
 import { loadAiMessages } from "@/lib/db-profile";
@@ -21,7 +21,7 @@ const STATUS: Record<TaskStatus, { label: string; tone: "neutral" | "brand" | "o
   stuck: { label: "Stuck, needs help", tone: "bad" },
 };
 
-const STEPS = ["Read the case", "Take the task", "Do the research", "Submit with sources", "A second person checks"];
+const STEPS = ["Read the case", "Take the idea", "Do the research", "Submit with sources", "A second person checks"];
 
 function stepIndex(t: Task): number {
   if (t.status === "open") return 1;
@@ -31,7 +31,7 @@ function stepIndex(t: Task): number {
 }
 
 const SAMPLE_AI: AiTurn[] = [
-  { id: "s1", role: "user", content: "Which trials need biopsy results she doesn't have yet?", sources: [] },
+  { id: "s1", role: "user", content: "Which trials need biopsy results the patient doesn't have yet?", sources: [] },
   {
     id: "s2",
     role: "assistant",
@@ -83,7 +83,7 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
         {lead ? (
           <>
             <Link href={`/case/${room.id}`} className="rounded-lg px-2 py-1 text-muted no-underline transition-colors hover:bg-hover hover:text-ink">
-              Leads
+              The case
             </Link>
             <span aria-hidden="true" className="text-line-2">
               /
@@ -97,13 +97,13 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
           </>
         ) : (
           <>
-            <Link href={`/case/${room.id}/doctor`} className="rounded-lg px-2 py-1 text-muted no-underline transition-colors hover:bg-hover hover:text-ink">
-              For the doctor
+            <Link href={`/case/${room.id}`} className="rounded-lg px-2 py-1 text-muted no-underline transition-colors hover:bg-hover hover:text-ink">
+              The case
             </Link>
             <span aria-hidden="true" className="text-line-2">
               /
             </span>
-            <span className="px-2">{section?.title ?? "Task"}</span>
+            <span className="max-w-[420px] truncate px-2">{task.title}</span>
           </>
         )}
       </nav>
@@ -122,7 +122,7 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
           <p className="mt-2.5 text-muted">
             {lead ? (
               <>
-                Part of the lead{" "}
+                Part of the idea{" "}
                 <Link href={`/case/${room.id}/lead/${lead.id}`} className="font-semibold">
                   {lead.title}
                 </Link>
@@ -143,16 +143,13 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
         <div className="flex max-w-xs flex-wrap items-start gap-2 sm:pt-8">
           {demo ? (
             <>
-              {task.status === "open" && <DemoButton variant="mark">Take this task</DemoButton>}
+              {task.status === "open" && <DemoButton variant="mark">Take this</DemoButton>}
               {active && <DemoButton variant="mark">Offer to help</DemoButton>}
               {task.status === "submitted" && <DemoButton variant="mark">Check this work</DemoButton>}
             </>
           ) : (
             <TaskHeaderActions room={room} task={task} />
           )}
-          <Link href={`/case/${room.id}/tried?task=${task.id}#log`} className={btn.secondary}>
-            Log a finding
-          </Link>
         </div>
       </header>
 
@@ -181,7 +178,7 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
 
       <div className="mt-7 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
         <div className="flex min-w-0 flex-col gap-6">
-          <article aria-label="The task" className="sheet px-5 py-8 sm:px-11 sm:py-9">
+          <article aria-label="The idea" className="sheet px-5 py-8 sm:px-11 sm:py-9">
             {canWrite ? (
               <>
                 <h2 id="submit" className="scroll-mt-6 font-display text-2xl font-medium">
@@ -200,7 +197,7 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
               <>
                 <h2 className="font-display text-2xl font-medium">Why this matters</h2>
                 <p className="mt-2 max-w-[68ch] font-serif text-lg leading-relaxed text-ink-2">
-                  {task.whyItMatters || "This task fills a gap in the brief for the doctor."}
+                  {task.whyItMatters || "This fills a part of the brief for the doctor."}
                 </p>
               </>
             )}
@@ -228,7 +225,7 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
                       >
                         <span>{i.label}</span>
                         <span className={`text-xs font-semibold ${i.ready ? "text-ok" : "text-bad"}`}>
-                          {i.ready ? "Ready" : "Missing, blocks this task"}
+                          {i.ready ? "Ready" : "Missing, blocks this idea"}
                         </span>
                       </li>
                     ))}
@@ -289,8 +286,8 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
               );
             })}
 
-          <section aria-label="People on this task">
-            <h2 className="mb-2 font-semibold">People on this task</h2>
+          <section aria-label="People on this idea">
+            <h2 className="mb-2 font-semibold">People on this idea</h2>
             {!owner && <p className="text-sm text-muted">No one yet. Take it and it&apos;s yours.</p>}
             <ul className="-mx-2 flex flex-col">
               {[
@@ -337,16 +334,16 @@ export default async function TaskPage({ params }: PageProps<"/case/[id]/task/[t
               {demo && requested.length > 0 && owner && (
                 <div className="flex flex-col gap-2 rounded-xl border border-line px-3.5 py-3">
                   <span className="text-[13px]">
-                    <strong>{requested.map((r) => r.name).join(", ")}</strong> asked to join this task.
+                    <strong>{requested.map((r) => r.name).join(", ")}</strong> asked to join this idea.
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <DemoButton variant="primary">Add as helper</DemoButton>
-                    <DemoButton>Split off part as a new task</DemoButton>
+                    <DemoButton>Split off part as a new idea</DemoButton>
                   </div>
                   <span className="text-xs text-muted">Only {owner.name} sees these buttons, as the owner.</span>
                 </div>
               )}
-              <Composer room={room} taskId={task.id} label="Write to people on this task" placeholder="Ask a question, share an update, or add a source link" />
+              <Composer room={room} taskId={task.id} label="Write to people on this idea" placeholder="Ask a question, share an update, or add a source link" />
             </div>
           }
         />

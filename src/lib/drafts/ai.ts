@@ -193,10 +193,10 @@ const COMPOSE_TOOL: Anthropic.Tool = {
     goal: {
       ...str,
       description:
-        "The goal of the case as one plain sentence under 140 characters, from what the family wants to know, e.g. 'Find her next options now that the first pill stopped working'. No names.",
+        "The goal of the case as one plain sentence under 140 characters, from what the family wants to know, e.g. 'Find the next options now that the first pill stopped working'. No names.",
     },
     age_range: { type: "string", enum: [...AGE_RANGES, "unknown"], description: "Only if a document states the age, else unknown" },
-    current_treatment: { ...str, description: "What she is on or waiting for now, under 80 characters, else empty" },
+    current_treatment: { ...str, description: "What the patient is on or waiting for now, under 80 characters, else empty" },
     visit_date: { ...str, description: "YYYY-MM-DD of the next doctor visit if a document says it, else empty" },
     plain: SECTION_SCHEMA,
     treatments_text: SECTION_SCHEMA,

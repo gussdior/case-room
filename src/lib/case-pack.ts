@@ -86,11 +86,11 @@ export async function buildPack(supabase: SupabaseClient, caseId: string, leadId
   lines.push(
     "## How to answer",
     "- You are helping volunteers research this case. Give ideas to investigate and questions for the patient's own doctor.",
-    "- Never give treatment advice. Never say what she should take, start or stop, and never predict outcomes.",
+    "- Never give treatment advice. Never say what the patient should take, start or stop, and never predict outcomes.",
     "- Give a source link for every claim. Only use real links you can see. Never invent trial numbers or papers.",
     "- Say which sources are preprints (not peer reviewed).",
     "- Check the list above before suggesting something already ruled out.",
-    "- End with 1 to 3 questions she could ask her doctor.",
+    "- End with 1 to 3 questions the patient could ask the doctor.",
   );
   return scrubKeepLinks(lines.filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n")).text;
 }

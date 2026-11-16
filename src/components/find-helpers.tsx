@@ -220,7 +220,7 @@ export function FindHelpers({
             </button>
             <p className="mt-3 text-[13px] text-muted">
               You can hide the visit date or turn the preview off any time in{" "}
-              <Link href={`/case/${caseId}/people#settings`}>Case settings</Link>.
+              <Link href={`/case/${caseId}/settings`}>Case settings</Link>.
             </p>
           </div>
         ) : places.length === 0 ? (

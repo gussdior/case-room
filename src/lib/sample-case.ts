@@ -280,7 +280,7 @@ export const SAMPLE_CASE: CaseRoom = {
     { id: "dana", name: "Dana", headline: "Clinical research coordinator", expertise: "researcher", role: "volunteer", status: "approved", roleTitle: "research coordinator" },
     { id: "leo", name: "Leo", headline: "Applied math, scientific machine learning", expertise: "researcher", role: "volunteer", status: "approved" },
     { id: "jess", name: "Jess", headline: "No medical background, bilingual", expertise: "no_medical", role: "volunteer", status: "approved" },
-    { id: "sam", name: "Sam", headline: "Health insurance advocate", expertise: "insurance_legal", role: "volunteer", status: "approved", roleTitle: "insurance advocate" },
+    { id: "sam", name: "Sam", headline: "Health insurance advocate", expertise: "insurance_legal", role: "volunteer", status: "removed", roleTitle: "insurance advocate" },
     {
       id: "maya",
       name: "Maya",
@@ -329,7 +329,7 @@ export const SAMPLE_CASE: CaseRoom = {
       isAi: true,
       kind: "ai_summary",
       pinned: true,
-      body: "2 tasks checked, 1 stuck (HLA result). Biggest need: a doctor or nurse to check the resistance list.",
+      body: "2 ideas checked, 1 stuck (HLA result). Biggest need: a doctor or nurse to check the resistance list.",
       createdAt: "today",
     },
     { id: "m1", authorId: "dana", kind: "message", body: "Two of the trials need a recent biopsy. Should we move the biopsy question to the top of the list?", createdAt: "1h ago" },

@@ -120,7 +120,7 @@ export function ListingFields({
             required
             minLength={10}
             maxLength={140}
-            placeholder="For example: Find her next options after the first pill stopped working"
+            placeholder="For example: Find the next options after the first pill stopped working"
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
             className={inputClass}

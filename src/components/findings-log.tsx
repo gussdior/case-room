@@ -55,7 +55,7 @@ export function FindingsLog({ caseId, findings, demo }: { caseId: string; findin
       <dl className="mb-6 flex flex-wrap gap-x-8 gap-y-3 border-b border-line pb-5">
         {[
           [findings.length, "things looked into", "text-ink"],
-          [count("may_fit"), "may fit her", "text-ok"],
+          [count("may_fit"), "may fit the patient", "text-ok"],
           [count("ruled_out"), "ruled out", "text-muted"],
           [count("waiting"), "waiting on results", "text-[#8a5a00]"],
         ].map(([n, l, c]) => (

@@ -70,7 +70,7 @@ export function StepWho({ draft, onSaved }: { draft: Draft | null; onSaved: (d: 
           What does the family want to know?
         </label>
         <p id="wants-hint" className="text-[13px] text-muted">
-          In your own words. For example: what the options are now that the pill stopped working, and which trials she
+          In your own words. For example: what the options are now that the pill stopped working, and which trials the patient
           could join.
         </p>
         <textarea

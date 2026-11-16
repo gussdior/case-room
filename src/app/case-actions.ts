@@ -21,9 +21,9 @@ const OUR_ERRORS = [
   "Not allowed",
   "The creator cannot be removed",
   "Join the case first",
-  "Someone already took this task. Offer to help instead.",
-  "Only the task owner can add helpers",
-  "Only the task owner can change this",
+  "Someone already took this. Offer to help instead.",
+  "Only the person who took this can add helpers",
+  "Only the person who took this can change it",
   "Only the case creator or co-approver can change settings",
   "Only the case creator can change how the case is listed",
   "Add a one line public goal before listing the case",
@@ -262,7 +262,7 @@ export async function releaseTask(caseId: string, taskId: string): Promise<Resul
   const { error } = await supabase.rpc("release_task", { t: taskId });
   if (error) return friendly(error);
   refresh(caseId);
-  return { ok: "Task handed back." };
+  return { ok: "Handed back." };
 }
 
 export async function setStuck(caseId: string, taskId: string, stuck: boolean, _: Result, form: FormData): Promise<Result> {
@@ -296,7 +296,7 @@ export async function offerHelp(caseId: string, taskId: string, _: Result, form:
   if (error && error.code !== "23505") return friendly(error);
   await supabase.from("messages").insert({ case_id: caseId, task_id: taskId, author_id: userId, body: note });
   refresh(caseId);
-  return { ok: "Sent. The task owner can add you as a helper." };
+  return { ok: "Sent. The person who took this can add you as a helper." };
 }
 
 export async function acceptHelper(caseId: string, taskId: string, userId: string): Promise<Result> {
@@ -381,7 +381,7 @@ export async function checkWork(caseId: string, submissionId: string, _: Result,
     if (error.message?.includes("row-level security"))
       return {
         error:
-          "You can't check this one. Checks must come from someone else with the same expertise as the task, or a doctor or nurse.",
+          "You can't check this one. Checks must come from someone else with the same expertise as the idea, or a doctor or nurse.",
       };
     return friendly(error);
   }

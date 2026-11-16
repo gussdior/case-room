@@ -14,13 +14,17 @@ type Props = {
   previewOn: boolean;
   /** Only the case creator can make the public page visible. */
   canTurnOn: boolean;
+  /** Button classes. The header uses the yellow button; an open seat uses a small quiet one. */
+  buttonClass?: string;
+  /** Read by screen readers when several Share buttons are on the page. */
+  buttonLabel?: string;
 };
 
 const ICON = "flex h-7 w-7 flex-none items-center justify-center rounded-[7px] bg-ink text-xs font-bold text-white";
 
 /** One Share button: opens a post on X, Reddit or WhatsApp with the case link in it, or copies the link.
  *  The link preview card is made from the case, with no names. */
-export function ShareMenu({ caseId, suggested, version, previewOn, canTurnOn }: Props) {
+export function ShareMenu({ caseId, suggested, version, previewOn, canTurnOn, buttonClass = "btn btn-mark", buttonLabel }: Props) {
   const router = useRouter();
   const menuId = useId();
   const wrap = useRef<HTMLDivElement>(null);
@@ -93,7 +97,8 @@ export function ShareMenu({ caseId, suggested, version, previewOn, canTurnOn }: 
       <button
         ref={button}
         type="button"
-        className="btn btn-mark"
+        className={buttonClass}
+        aria-label={buttonLabel}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}

@@ -22,7 +22,7 @@ export function TaskHeaderActions({ room, task }: { room: CaseRoom; task: Task }
   if (task.status === "open")
     return (
       <ActionButton action={claimTask.bind(null, room.id, task.id)} variant="mark">
-        Take this task
+        Take this
       </ActionButton>
     );
   if (isOwner && active)
@@ -32,7 +32,7 @@ export function TaskHeaderActions({ room, task }: { room: CaseRoom; task: Task }
           Go to my work
         </a>
         <ActionButton action={releaseTask.bind(null, room.id, task.id)}>Give it back</ActionButton>
-        <span className="text-xs leading-snug text-subtle">No update for 3 days and the task opens again on its own.</span>
+        <span className="text-xs leading-snug text-subtle">No update for 3 days and the idea opens again on its own.</span>
       </>
     );
   if (isHelper && active) return <span className="text-sm text-ok">You&apos;re helping on this task.</span>;
@@ -119,7 +119,7 @@ export function TaskWorkPanels({ room, task }: { room: CaseRoom; task: Task }) {
           </h2>
           <ActionForm action={offerHelp.bind(null, room.id, task.id)} className="flex flex-col gap-2">
             <label htmlFor="help-note" className={labelClass}>
-              How would you like to help? This posts in the task discussion.
+              How would you like to help? This posts in the discussion on this idea.
             </label>
             <textarea id="help-note" name="note" rows={2} required minLength={5} maxLength={1000} className={`${inputClass} resize-y`} />
             <SubmitButton className="self-start">Send offer</SubmitButton>
@@ -141,7 +141,7 @@ export function TaskWorkPanels({ room, task }: { room: CaseRoom; task: Task }) {
               </ActionButton>
             </div>
           ))}
-          <p className="text-xs text-subtle">Helpers can submit work on this task with you.</p>
+          <p className="text-xs text-subtle">Helpers can submit work on this idea with you.</p>
         </Card>
       )}
     </>

@@ -23,11 +23,11 @@ async function ready(...ids: (string | null | undefined)[]): Promise<Result> {
 
 const MESSAGES = [
   "Use rule out, with a reason and a source",
-  "Only a case admin can reopen a ruled out lead",
+  "Only a case admin can reopen a ruled out idea",
   "Already ruled out",
   "Say why it is ruled out",
   "Add a source link for the reason",
-  "Only the person who added this lead or a case admin can edit it",
+  "Only the person who added this idea or a case admin can edit it",
 ];
 
 function friendly(error: { message?: string; code?: string } | null): Result {

@@ -166,8 +166,8 @@ export function AiHelper({
   const short = taskTitle.length > 70 ? taskTitle.slice(0, 67) + "..." : taskTitle;
   const starters = onLead
     ? [
-        "What would make this idea worth asking her doctor about?",
-        "Find trials, papers or preprints on this idea that fit her case",
+        "What would make this idea worth asking the doctor about?",
+        "Find trials, papers or preprints on this idea that fit this case",
         "Has the team already ruled out anything like this?",
       ]
     : [
@@ -329,7 +329,7 @@ export function AiHelper({
                         `From the AI helper${onLead ? ` on "${short}"` : ""}:\n${t.content.replace(CITE, "").trim()}`,
                         !onLead,
                         t.sources,
-                        onLead ? "Shared in the case discussion." : "Shared in the task discussion.",
+                        onLead ? "Shared in the case discussion." : "Shared in the discussion on this idea.",
                       )
                     }
                   >
@@ -368,14 +368,14 @@ export function AiHelper({
         className="flex items-center gap-2 rounded-xl border border-line-2 py-1.5 pr-1.5 pl-3.5 transition-[border-color,box-shadow] focus-within:border-brand focus-within:shadow-[0_0_0_3px_#d9def5]"
       >
         <label htmlFor="ai-q" className="sr-only">
-          {onLead ? "Ask AI about this lead" : "Ask AI about this task"}
+          {"Ask AI about this idea"}
         </label>
         <input
           id="ai-q"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           maxLength={4000}
-          placeholder={onLead ? "Ask about this lead" : "Ask about this task"}
+          placeholder={"Ask about this idea"}
           className="min-h-10 flex-1 bg-transparent text-[15px] outline-none"
           autoComplete="off"
         />
@@ -385,7 +385,7 @@ export function AiHelper({
       </form>
       <p className="text-[13px] text-muted">
         The AI helps you research. It does not give treatment advice, and every answer shows its sources.{" "}
-        {onLead ? "Answers are saved as AI runs everyone on the case can see." : "Everyone on the case can read this chat."} Never type names or ID
+        {onLead ? "Answers are saved where everyone on the case can see them." : "Everyone on the case can read this chat."} Never type names or ID
         numbers.
       </p>
     </div>

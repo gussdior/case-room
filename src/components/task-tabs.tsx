@@ -19,8 +19,8 @@ export function TaskTabs({ ai, discussion, newCount }: { ai: ReactNode; discussi
     { id: "dis" as const, label: "Discussion" },
   ];
   return (
-    <section id="ai" aria-label="Help on this task" className="panel scroll-mt-6 overflow-hidden lg:sticky lg:top-5">
-      <div role="tablist" aria-label="Help on this task" className="relative grid grid-cols-2 border-b border-line">
+    <section id="ai" aria-label="Help on this idea" className="panel scroll-mt-6 overflow-hidden lg:sticky lg:top-5">
+      <div role="tablist" aria-label="Help on this idea" className="relative grid grid-cols-2 border-b border-line">
         {tabs.map((t) => (
           <button
             key={t.id}

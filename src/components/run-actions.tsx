@@ -95,13 +95,13 @@ export function RunActions({
       <button type="button" onClick={reuse} className={linkBtn}>
         Reuse prompt{reuseCount > 0 ? ` (${reuseCount})` : ""}
       </button>
-      {demo ? (
+      {onLead ? null : demo ? (
         <button type="button" className={linkBtn} onClick={() => setToast("This is a sample case. Sign in to work on a real one.")}>
-          Log as a finding
+          Save to what we tried
         </button>
       ) : (
         <Link href={`/case/${caseId}/tried?run=${runId}#log`} className={`${linkBtn} no-underline`}>
-          Log as a finding
+          Save to what we tried
         </Link>
       )}
       <button type="button" onClick={toDoctor} disabled={busy} className={linkBtn}>

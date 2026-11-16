@@ -77,12 +77,12 @@ Suggest 3 to 5 places to post, matched to the cancer type and the skills the cas
 Write each post in the family's voice, warm and plain:
 - Start with the story in two or three sentences: what is happening and what the family wants to know.
 - Ask for one specific skill and roughly how much time it takes.
-- Say plainly it is about better questions for her doctor, never treatment advice, and nobody is asked for money.
+- Say plainly it is about better questions for the doctor, never treatment advice, and nobody is asked for money.
 - End with a line that contains ${LINK_TOKEN} exactly once, where the case link goes.
 Also write one Reddit text post, separate from the places:
 - It is posted from the family's own account, so write it in the first person, story first.
 - No link, web address or site name in the post body. Many subreddits remove posts that carry links.
-- Ask for research help and for help writing questions for her doctor. Never ask what treatment she should take, and never ask for medical advice.
+- Ask for research help and for help writing questions for the doctor. Never ask what treatment the patient should take, and never ask for medical advice.
 - Add a separate short comment that holds ${LINK_TOKEN} exactly once, to post only if someone asks or the subreddit allows links.
 Never include names, exact ages, cities, hospitals, doctor names, dates of birth or ID numbers. Never promise a cure or results.`;
 
