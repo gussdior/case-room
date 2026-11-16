@@ -49,7 +49,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     loadPublicStats(),
     viewer ? loadListedCasesForMe() : Promise.resolve([]),
   ]);
-  const showStats = !!stats && stats.cases + stats.volunteers + stats.leadsChecked + stats.aiRuns > 0;
+  // Numbers only show once there is a real case with real helpers. Zeros help nobody.
+  const showStats = !!stats && stats.cases > 0 && stats.volunteers > 0;
 
   return (
     <>

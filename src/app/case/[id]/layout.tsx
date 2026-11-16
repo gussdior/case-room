@@ -22,11 +22,20 @@ export default async function CaseLayout({ children, params }: LayoutProps<"/cas
   return (
     <>
       <AppHeader
+        menuLinks={
+          canShare && room && !demo
+            ? [
+                { href: `/case/${room.id}/people`, label: "People on this case" },
+                { href: `/case/${room.id}/settings`, label: "Case settings" },
+              ]
+            : []
+        }
         right={
           <>
             {(room?.isSample || demo) && (
               <span className="rounded-full bg-mark-soft px-3 py-1.5 text-xs font-semibold text-mark-text">
-                Sample case, not a real person
+                <span className="sm:hidden">Sample</span>
+                <span className="hidden sm:inline">Sample case, not a real person</span>
               </span>
             )}
             {canShare && room && (
@@ -43,7 +52,7 @@ export default async function CaseLayout({ children, params }: LayoutProps<"/cas
                 href={`/case/${room.id}/settings`}
                 aria-label="Case settings"
                 title="Case settings"
-                className="grid h-11 w-11 flex-none place-items-center rounded-[10px] border border-line-2 bg-white text-muted no-underline transition-colors hover:bg-hover hover:text-ink"
+                className="hidden h-11 w-11 flex-none place-items-center rounded-[10px] border border-line-2 bg-white text-muted no-underline sm:grid transition-colors hover:bg-hover hover:text-ink"
               >
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3" />

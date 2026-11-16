@@ -13,7 +13,7 @@ export function CaseNav({ caseId }: { caseId: string }) {
     { href: `${base}/doctor`, label: "For the doctor", active: onDoctor },
   ];
   return (
-    <nav aria-label="Case" className="flex flex-wrap gap-1">
+    <nav aria-label="Case" className="flex gap-1 max-sm:-mx-3">
       {links.map((l) => (
         <Link key={l.label} href={l.href} aria-current={l.active ? "page" : undefined} className="nav-link">
           {l.label}
