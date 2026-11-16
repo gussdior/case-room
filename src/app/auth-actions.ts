@@ -34,6 +34,18 @@ export async function sendSignInLink(_: FormState, form: FormData): Promise<Form
   return { ok: email };
 }
 
+/** Starts Google sign in. Google sends the person back to /auth/callback, which finishes it. */
+export async function signInWithGoogle(form: FormData) {
+  const next = safeNext(form.get("next"));
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent(next)}` },
+  });
+  if (error || !data?.url) redirect(`/login?error=google&next=${encodeURIComponent(next)}`);
+  redirect(data.url);
+}
+
 export async function verifyCode(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const token = String(form.get("code") ?? "").replace(/\s/g, "");
